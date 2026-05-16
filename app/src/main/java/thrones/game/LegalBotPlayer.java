@@ -4,11 +4,21 @@ import ch.aplu.jcardgame.Card;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 public class LegalBotPlayer extends Player {
 
-    public LegalBotPlayer(int playerIdentifier) {
+    private Random randomGenerator;
+    private List<String> considerationCodes;
+
+    public LegalBotPlayer(int playerIdentifier, Random randomGenerator, List<String> considerationCodes) {
         super(playerIdentifier);
+        this.randomGenerator = randomGenerator;
+        this.considerationCodes = considerationCodes != null ? considerationCodes : new ArrayList<>();
+    }
+
+    public List<String> getConsiderationCodes() {
+        return considerationCodes;
     }
 
     @Override
@@ -23,18 +33,20 @@ public class LegalBotPlayer extends Player {
         }
 
         if (validPlayableCards.isEmpty()) {
-            return Optional.empty(); // Pass if no valid cards are held
-        } else {
-            // A basic legal move: simply return the first valid card found.
-            // If implementing the Composite Pattern later, this selection
-            // logic can be delegated to a composite rule evaluator.
-            return Optional.of(validPlayableCards.get(0));
+            return Optional.empty();
         }
+
+        // Randomly select a card (same as original random bot base behaviour)
+        if (!isCharacterRound && randomGenerator.nextInt(3) == 0) {
+            return Optional.empty();
+        }
+
+        int randomCardIndex = randomGenerator.nextInt(validPlayableCards.size());
+        return Optional.of(validPlayableCards.get(randomCardIndex));
     }
 
     @Override
     public int choosePileToPlayOn() {
-        // Any pile is technically a legal move, so it defaults to the first pile.
-        return 0;
+        return randomGenerator.nextInt(2);
     }
 }
