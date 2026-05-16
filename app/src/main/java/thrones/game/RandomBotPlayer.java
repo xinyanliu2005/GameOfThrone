@@ -20,7 +20,7 @@ public class RandomBotPlayer extends Player{
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(boolean isCharacterRound) {
+    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         List<Card> validPlayableCards = new ArrayList<>();
 
         for (Card card : getPlayerHand().getCardList()) {

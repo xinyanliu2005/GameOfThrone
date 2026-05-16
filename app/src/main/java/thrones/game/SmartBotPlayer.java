@@ -10,7 +10,7 @@ public class SmartBotPlayer extends Player {
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(boolean isCharacterRound) {
+    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         // TODO: Implement your evaluation function or search algorithm here.
         // Evaluate the valid cards in getPlayerHand().getCardList() against
         // the current state of the game board to find the optimal play.

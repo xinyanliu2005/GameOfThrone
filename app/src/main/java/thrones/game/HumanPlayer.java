@@ -42,7 +42,7 @@ public class HumanPlayer extends Player {
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(boolean isCharacterRound) {
+    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         if (getPlayerHand().isEmpty()) {
             return Optional.empty();
         }
