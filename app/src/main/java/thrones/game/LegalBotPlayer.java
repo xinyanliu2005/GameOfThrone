@@ -13,14 +13,7 @@ public class LegalBotPlayer extends Player {
 
     @Override
     public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
-        List<Card> validPlayableCards = new ArrayList<>();
-
-        for (Card card : getPlayerHand().getCardList()) {
-            Suit cardSuit = (Suit) card.getSuit();
-            if (cardSuit.isCharacter() == isCharacterRound) {
-                validPlayableCards.add(card);
-            }
-        }
+        List<Card> validPlayableCards = getValidCards(isCharacterRound);
 
         if (validPlayableCards.isEmpty()) {
             return Optional.empty(); // Pass if no valid cards are held

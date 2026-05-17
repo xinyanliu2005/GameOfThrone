@@ -12,23 +12,16 @@ public class RandomBotPlayer extends Player{
 
     public RandomBotPlayer(int playerIdentifier, Random randomGenerator) {
         super(playerIdentifier);
-        this.randomGenerator = randomGenerator;
+        this.randomGenerator = (randomGenerator != null) ? randomGenerator : new Random();
     }
 
     public RandomBotPlayer(int playerIdentifier) {
-        super(playerIdentifier);
+        this(playerIdentifier, new Random());
     }
 
     @Override
     public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
-        List<Card> validPlayableCards = new ArrayList<>();
-
-        for (Card card : getPlayerHand().getCardList()) {
-            Suit cardSuit = (Suit) card.getSuit();
-            if (cardSuit.isCharacter() == isCharacterRound) {
-                validPlayableCards.add(card);
-            }
-        }
+        List<Card> validPlayableCards = getValidCards(isCharacterRound);
 
         if (validPlayableCards.isEmpty() || (!isCharacterRound && randomGenerator.nextInt(3) == 0)) {
             return Optional.empty();

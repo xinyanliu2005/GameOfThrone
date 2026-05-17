@@ -2,6 +2,8 @@ package thrones.game;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class Player {
@@ -32,6 +34,22 @@ public abstract class Player {
 
     public void addPointsToScore(int pointsEarned) {
         this.currentScore += pointsEarned;
+    }
+
+    /**
+     * Filters the player's hand for cards that are valid to play in the current round type.
+     * @param isCharacterRound True if searching for character cards, false for non-character cards.
+     * @return A list of valid cards.
+     */
+    public List<Card> getValidCards(boolean isCharacterRound) {
+        List<Card> validCards = new ArrayList<>();
+        for (Card card : getPlayerHand().getCardList()) {
+            Suit cardSuit = (Suit) card.getSuit();
+            if (cardSuit.isCharacter() == isCharacterRound) {
+                validCards.add(card);
+            }
+        }
+        return validCards;
     }
 
     /**
