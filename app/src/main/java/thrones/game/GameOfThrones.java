@@ -38,8 +38,7 @@ public class GameOfThrones extends CardGame {
 
     private boolean isAuto = false;
     public final int nbPlayers = 4;
-    private final int nbHeartCardsPerPlayer = 3;
-    private final int nbEffectCardsPerPlayer = 9;
+    // Dealing constants moved to PlayerFactory
     public final int nbPlays = 2;
     public final int nbRounds = 3;
     private Deck deck = new Deck(Suit.values(), Rank.values(), "cover");
@@ -191,30 +190,9 @@ public class GameOfThrones extends CardGame {
         return logger.getAllLog();
     }
 
-    private void sortHand(Hand hand) {
-        List<Card> cards = hand.getCardList();
-        Comparator<Card> cardComparator = (o1, o2) -> {
-            Suit suit1 = (Suit) o1.getSuit();
-            Suit suit2 = (Suit) o2.getSuit();
-            Rank rank1 = (Rank) o1.getRank();
-            Rank rank2 = (Rank) o2.getRank();
+    // Hand sorting is now handled by PlayerFactory.dealCards()
 
-            if (suit1.ordinal() - suit2.ordinal() != 0) {
-                return suit1.ordinal() - suit2.ordinal();
-            }
-
-            return rank1.getShortHandValue() - rank2.getShortHandValue();
-        };
-
-        cards.sort(cardComparator);
-    }
-
-    // return random Card from Hand
-    public static Card randomCard(Hand hand) {
-        assert !hand.isEmpty() : " random card from empty hand.";
-        int x = random.nextInt(hand.getNumberOfCards());
-        return hand.get(x);
-    }
+    // Random card selection is now handled by PlayerFactory
 
 
     private Rank getRankFromString(String cardName) {
@@ -256,78 +234,8 @@ public class GameOfThrones extends CardGame {
         return null;
     }
 
-    private void dealingOutHeartCards(Hand[] hands, Hand pack) {
-        List<Card> heartCards = pack.getCardsWithSuit(Suit.HEARTS);
-        for (int i = 0; i < nbPlayers; i++) {
-            int remainingHeartCards = nbHeartCardsPerPlayer;
-            if (isAuto) {
-                if (!initialHeartStrings.get(currentPlay).get(i).isEmpty()) {
-                    List<String> playerHeartStrings = initialHeartStrings.get(currentPlay).get(i);
-                    for (String heartString : playerHeartStrings) {
-                        Card card = getCardFromList(heartCards, heartString);
-                        assert card != null;
-                        card.removeFromHand(false);
-                        hands[i].insert(card, false);
-                        remainingHeartCards--;
-                    }
-                }
-            }
-
-            for (int j = 0; j < remainingHeartCards; j++) {
-                int x = random.nextInt(heartCards.size());
-                Card randomCard = heartCards.get(x);
-                randomCard.removeFromHand(false);
-                hands[i].insert(randomCard, false);
-            }
-        }
-    }
-
-    private void dealingOutEffectCards(Hand[] hands, Hand pack) {
-        for (int i = 0; i < nbPlayers; i++) {
-            int remainingEffectCards = nbEffectCardsPerPlayer;
-            if (isAuto) {
-                if (!initialCardStrings.get(currentPlay).get(i).isEmpty()) {
-                    List<String> playerEffectStrings = initialCardStrings.get(currentPlay).get(i);
-                    for (String effectString : playerEffectStrings) {
-                        Card card = getCardFromList(pack.getCardList(), effectString);
-                        assert card != null;
-                        card.removeFromHand(false);
-                        hands[i].insert(card, false);
-                        remainingEffectCards--;
-                    }
-                }
-            }
-            for (int j = 0; j < remainingEffectCards; j++) {
-                assert !pack.isEmpty() : " Pack has prematurely run out of cards.";
-                Card dealt = randomCard(pack);
-                dealt.removeFromHand(false);
-                hands[i].insert(dealt, false);
-            }
-        }
-    }
-
-    private void dealingOut(Hand[] hands) {
-        Hand pack = deck.toHand(false);
-        assert pack.getNumberOfCards() == 52 : " Starting pack is not 52 cards.";
-        // Remove 4 Aces
-        List<Card> aceCards = pack.getCardsWithRank(Rank.ACE);
-        for (Card card : aceCards) {
-            card.removeFromHand(false);
-        }
-        assert pack.getNumberOfCards() == 48 : " Pack without aces is not 48 cards.";
-        // Give each player 3 heart cards
-        dealingOutHeartCards(hands, pack);
-
-        assert pack.getNumberOfCards() == 36 : " Pack without aces and hearts is not 36 cards.";
-        // Give each player 9 of the remaining cards
-        dealingOutEffectCards(hands, pack);
-
-        for (int j = 0; j < nbPlayers; j++) {
-            sortHand(hands[j]);
-            logger.logPlayerCards(hands[j], j);
-            assert hands[j].getNumberOfCards() == 12 : " Hand does not have twelve cards.";
-        }
-    }
+    // Card dealing is now handled by PlayerFactory.dealCards()
+    // Card lookup utilities remain here for auto-mode play logic
 
     private void initScore() {
         for (int i = 0; i < nbPlayers; i++) {
@@ -364,11 +272,17 @@ public class GameOfThrones extends CardGame {
     public static final int ATTACK_RANK_INDEX = 0;
     public static final int DEFENCE_RANK_INDEX = 1;
     private void setupGame() {
-        hands = new Hand[nbPlayers];
-        for (int i = 0; i < nbPlayers; i++) {
-            hands[i] = new Hand(deck);
+        // Use PlayerFactory (Singleton) to create hands and deal cards
+        PlayerFactory factory = PlayerFactory.getInstance();
+        hands = factory.createHands(deck, nbPlayers);
+        factory.dealCards(hands, deck, nbPlayers, isAuto,
+                initialHeartStrings.get(currentPlay),
+                initialCardStrings.get(currentPlay));
+
+        // Log player cards after dealing
+        for (int j = 0; j < nbPlayers; j++) {
+            logger.logPlayerCards(hands[j], j);
         }
-        dealingOut(hands);
 
         for (int i = 0; i < nbPlayers; i++) {
             hands[i].sort(Hand.SortType.SUITPRIORITY, true);

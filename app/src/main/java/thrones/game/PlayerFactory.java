@@ -1,26 +1,39 @@
 package thrones.game;
 
+import ch.aplu.jcardgame.Card;
+import ch.aplu.jcardgame.Deck;
+import ch.aplu.jcardgame.Hand;
+
 import java.util.*;
 
 /**
- * Singleton Factory for creating Player instances based on configuration strings
- * from the properties file.
+ * Singleton Factory for creating Player instances and dealing hands.
+ *
+ * This factory centralises two related creation responsibilities:
+ * 1. Creating the correct Player subclass from a properties config string
+ * 2. Creating and dealing Hand objects to each player from the deck
  *
  * Design patterns used:
- * - Singleton: ensures a single factory instance manages player creation consistently
- * - Factory Method: encapsulates the instantiation logic for different Player subtypes,
- *   so GameOfThrones doesn't need to know concrete player classes or parsing details
+ * - Singleton: ensures a single factory instance manages all player/hand creation
+ *   consistently with the same Random seed throughout the game
+ * - Factory Method: encapsulates the instantiation logic for different Player subtypes
+ *   and the dealing algorithm, so GameOfThrones doesn't need to know concrete player
+ *   classes or the complex dealing rules
  *
  * GRASP principles:
- * - Creator: PlayerFactory has the knowledge needed to create players (it parses config strings)
- * - Low Coupling: GameOfThrones depends only on PlayerFactory and abstract Player, not on
- *   HumanPlayer, RandomBotPlayer, LegalBotPlayer, SmartBotPlayer directly
- * - High Cohesion: all player-creation logic is in one place
+ * - Creator: PlayerFactory has the initialisation data needed to create players and hands
+ * - Low Coupling: GameOfThrones depends only on PlayerFactory and abstract Player
+ * - High Cohesion: all player-and-hand creation logic is in one place
+ * - Information Expert: the factory knows the config format, dealing rules, and Random seed
  */
 public class PlayerFactory {
 
     private static PlayerFactory instance;
     private Random random;
+
+    // Constants for dealing
+    private static final int NB_HEART_CARDS_PER_PLAYER = 3;
+    private static final int NB_EFFECT_CARDS_PER_PLAYER = 9;
 
     private PlayerFactory(Random random) {
         this.random = random;
@@ -42,7 +55,8 @@ public class PlayerFactory {
      */
     public static synchronized PlayerFactory getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("PlayerFactory has not been initialised. Call init(Random) first.");
+            throw new IllegalStateException(
+                    "PlayerFactory has not been initialised. Call init(Random) first.");
         }
         return instance;
     }
@@ -54,6 +68,10 @@ public class PlayerFactory {
         instance = null;
     }
 
+    // ===================================================================
+    // Player Creation
+    // ===================================================================
+
     /**
      * Creates a Player from the properties configuration string.
      *
@@ -61,7 +79,7 @@ public class PlayerFactory {
      *   "human"                -> HumanPlayer
      *   "random"               -> RandomBotPlayer
      *   "legal-oa,td,tm"       -> LegalBotPlayer with OA, TD, TM considerations
-     *   "legal"                -> LegalBotPlayer with no considerations (passes by default)
+     *   "legal"                -> LegalBotPlayer with no considerations
      *   "smart"                -> SmartBotPlayer
      *
      * @param playerIndex  the player's index (0-3)
@@ -70,7 +88,6 @@ public class PlayerFactory {
      */
     public Player createPlayer(int playerIndex, String configString) {
         if (configString == null || configString.trim().isEmpty()) {
-            // Default to human if not specified
             return new HumanPlayer(playerIndex);
         }
 
@@ -90,28 +107,21 @@ public class PlayerFactory {
         switch (playerTypeStr) {
             case "human":
                 return new HumanPlayer(playerIndex);
-
             case "random":
                 return new RandomBotPlayer(playerIndex, random);
-
             case "legal":
                 return createLegalBot(playerIndex, configPart);
-
             case "smart":
                 return new SmartBotPlayer(playerIndex);
-
             default:
-                System.err.println("Unknown player type: " + playerTypeStr + ". Defaulting to human.");
+                System.err.println("Unknown player type: " + playerTypeStr
+                        + ". Defaulting to human.");
                 return new HumanPlayer(playerIndex);
         }
     }
 
     /**
      * Creates all four players from a Properties object.
-     *
-     * @param properties the game properties
-     * @param nbPlayers  number of players (typically 4)
-     * @return list of Player instances in order
      */
     public List<Player> createAllPlayers(Properties properties, int nbPlayers) {
         List<Player> players = new ArrayList<>();
@@ -122,10 +132,6 @@ public class PlayerFactory {
         return players;
     }
 
-    /**
-     * Creates a LegalBotPlayer with the specified considerations parsed from the config string.
-     * e.g. "oa,td,tm" -> list of consideration codes [OA, TD, TM]
-     */
     private LegalBotPlayer createLegalBot(int playerIndex, String considerationsStr) {
         List<String> considerationCodes = new ArrayList<>();
         if (considerationsStr != null && !considerationsStr.isEmpty()) {
@@ -138,5 +144,177 @@ public class PlayerFactory {
             }
         }
         return new LegalBotPlayer(playerIndex, random, considerationCodes);
+    }
+
+    // ===================================================================
+    // Hand Creation and Dealing
+    // ===================================================================
+
+    /**
+     * Creates empty Hand objects for each player using the given deck.
+     *
+     * @param deck      the game Deck to create hands from
+     * @param nbPlayers number of players
+     * @return array of empty Hand objects, one per player
+     */
+    public Hand[] createHands(Deck deck, int nbPlayers) {
+        Hand[] hands = new Hand[nbPlayers];
+        for (int i = 0; i < nbPlayers; i++) {
+            hands[i] = new Hand(deck);
+        }
+        return hands;
+    }
+
+    /**
+     * Deals cards from the deck into the player hands, respecting auto-mode
+     * card assignments from the properties file.
+     *
+     * This method handles the full dealing sequence:
+     * 1. Creates a pack from the deck and removes aces
+     * 2. Deals 3 heart cards to each player (auto-assigned or random)
+     * 3. Deals 9 effect cards to each player (auto-assigned or random)
+     * 4. Sorts each hand
+     *
+     * @param hands              the Hand array to deal into
+     * @param deck               the game Deck
+     * @param nbPlayers          number of players
+     * @param isAuto             whether auto-mode is enabled
+     * @param initialHeartStrings heart card strings for this play, per player
+     * @param initialCardStrings  effect card strings for this play, per player
+     */
+    public void dealCards(Hand[] hands, Deck deck, int nbPlayers,
+                          boolean isAuto,
+                          List<List<String>> initialHeartStrings,
+                          List<List<String>> initialCardStrings) {
+
+        Hand pack = deck.toHand(false);
+        assert pack.getNumberOfCards() == 52 : " Starting pack is not 52 cards.";
+
+        // Remove 4 Aces
+        List<Card> aceCards = pack.getCardsWithRank(Rank.ACE);
+        for (Card card : aceCards) {
+            card.removeFromHand(false);
+        }
+        assert pack.getNumberOfCards() == 48 : " Pack without aces is not 48 cards.";
+
+        // Deal 3 heart cards to each player
+        dealHeartCards(hands, pack, nbPlayers, isAuto, initialHeartStrings);
+        assert pack.getNumberOfCards() == 36 : " Pack without aces and hearts is not 36 cards.";
+
+        // Deal 9 effect cards to each player
+        dealEffectCards(hands, pack, nbPlayers, isAuto, initialCardStrings);
+
+        // Sort each hand
+        for (int j = 0; j < nbPlayers; j++) {
+            sortHand(hands[j]);
+            assert hands[j].getNumberOfCards() == 12 : " Hand does not have twelve cards.";
+        }
+    }
+
+    private void dealHeartCards(Hand[] hands, Hand pack, int nbPlayers,
+                                boolean isAuto, List<List<String>> initialHeartStrings) {
+        List<Card> heartCards = pack.getCardsWithSuit(Suit.HEARTS);
+        for (int i = 0; i < nbPlayers; i++) {
+            int remaining = NB_HEART_CARDS_PER_PLAYER;
+
+            if (isAuto && initialHeartStrings != null
+                    && i < initialHeartStrings.size()
+                    && !initialHeartStrings.get(i).isEmpty()) {
+                for (String heartString : initialHeartStrings.get(i)) {
+                    Card card = getCardFromList(heartCards, heartString);
+                    assert card != null;
+                    card.removeFromHand(false);
+                    hands[i].insert(card, false);
+                    remaining--;
+                }
+            }
+
+            for (int j = 0; j < remaining; j++) {
+                int x = random.nextInt(heartCards.size());
+                Card randomCard = heartCards.get(x);
+                randomCard.removeFromHand(false);
+                hands[i].insert(randomCard, false);
+            }
+        }
+    }
+
+    private void dealEffectCards(Hand[] hands, Hand pack, int nbPlayers,
+                                 boolean isAuto, List<List<String>> initialCardStrings) {
+        for (int i = 0; i < nbPlayers; i++) {
+            int remaining = NB_EFFECT_CARDS_PER_PLAYER;
+
+            if (isAuto && initialCardStrings != null
+                    && i < initialCardStrings.size()
+                    && !initialCardStrings.get(i).isEmpty()) {
+                for (String effectString : initialCardStrings.get(i)) {
+                    Card card = getCardFromList(pack.getCardList(), effectString);
+                    assert card != null;
+                    card.removeFromHand(false);
+                    hands[i].insert(card, false);
+                    remaining--;
+                }
+            }
+
+            for (int j = 0; j < remaining; j++) {
+                assert !pack.isEmpty() : " Pack has prematurely run out of cards.";
+                int x = random.nextInt(pack.getNumberOfCards());
+                Card dealt = pack.get(x);
+                dealt.removeFromHand(false);
+                hands[i].insert(dealt, false);
+            }
+        }
+    }
+
+    // ===================================================================
+    // Card utility methods (moved from GameOfThrones)
+    // ===================================================================
+
+    private Rank getRankFromString(String cardName) {
+        String rankString = cardName.substring(0, cardName.length() - 1);
+        int rankValue = Integer.parseInt(rankString);
+        for (Rank rank : Rank.values()) {
+            if (rank.getShortHandValue() == rankValue) {
+                return rank;
+            }
+        }
+        return Rank.ACE;
+    }
+
+    private Suit getSuitFromString(String cardName) {
+        String suitString = cardName.substring(cardName.length() - 1);
+        for (Suit suit : Suit.values()) {
+            if (suit.getSuitShortHand().equals(suitString)) {
+                return suit;
+            }
+        }
+        return Suit.CLUBS;
+    }
+
+    private Card getCardFromList(List<Card> cards, String cardName) {
+        Rank existingRank = getRankFromString(cardName);
+        Suit existingSuit = getSuitFromString(cardName);
+        for (Card card : cards) {
+            Suit suit = (Suit) card.getSuit();
+            Rank rank = (Rank) card.getRank();
+            if (suit.getSuitShortHand().equals(existingSuit.getSuitShortHand())
+                    && rank.getShortHandValue() == existingRank.getShortHandValue()) {
+                return card;
+            }
+        }
+        return null;
+    }
+
+    private void sortHand(Hand hand) {
+        List<Card> cards = hand.getCardList();
+        cards.sort((o1, o2) -> {
+            Suit suit1 = (Suit) o1.getSuit();
+            Suit suit2 = (Suit) o2.getSuit();
+            Rank rank1 = (Rank) o1.getRank();
+            Rank rank2 = (Rank) o2.getRank();
+            if (suit1.ordinal() != suit2.ordinal()) {
+                return suit1.ordinal() - suit2.ordinal();
+            }
+            return rank1.getShortHandValue() - rank2.getShortHandValue();
+        });
     }
 }
