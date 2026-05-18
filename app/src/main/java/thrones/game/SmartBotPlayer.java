@@ -4,9 +4,14 @@ import ch.aplu.jcardgame.Card;
 import java.util.Optional;
 
 public class SmartBotPlayer extends Player {
-
+    private final int NORTH = 0;
+    private final int SOUTH = 1;
+    private int pileIndex;
     public SmartBotPlayer(int playerIdentifier) {
         super(playerIdentifier);
+
+        if (playerIdentifier % 2 == 0) pileIndex = NORTH;
+        else pileIndex = SOUTH;
     }
 
     @Override

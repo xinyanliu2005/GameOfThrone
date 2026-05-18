@@ -7,14 +7,19 @@ import java.util.Optional;
 import java.util.Random;
 
 public class LegalBotPlayer extends Player {
-
     private Random randomGenerator;
     private List<String> considerationCodes;
+
+    private final int NORTH = 0;
+    private final int SOUTH = 1;
+    private int pileIndex;
 
     public LegalBotPlayer(int playerIdentifier, Random randomGenerator, List<String> considerationCodes) {
         super(playerIdentifier);
         this.randomGenerator = randomGenerator;
         this.considerationCodes = considerationCodes != null ? considerationCodes : new ArrayList<>();
+        if (playerIdentifier % 2 == 0) pileIndex = NORTH;
+        else pileIndex = SOUTH;
     }
 
     public List<String> getConsiderationCodes() {
