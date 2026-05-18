@@ -38,8 +38,7 @@ public class GameOfThrones extends CardGame {
 
     private boolean isAuto = false;
     public final int nbPlayers = 4;
-    private final int nbHeartCardsPerPlayer = 3;
-    private final int nbEffectCardsPerPlayer = 9;
+    // Dealing constants moved to PlayerFactory
     public final int nbPlays = 2;
     public final int nbRounds = 3;
     private Deck deck = new Deck(Suit.values(), Rank.values(), "cover");
@@ -65,26 +64,11 @@ public class GameOfThrones extends CardGame {
             new Location(300, 520)
     };
 
-    private enum PlayerType {
-        HUMAN,
-        RANDOM,
-        LEGAL,
-        SMART;
-
-        public static PlayerType fromStringToPlayerType(String playerTypeStr) {
-            if (playerTypeStr == null || playerTypeStr.trim().isEmpty()) {
-                return null; // Invalid input
-            }
-
-            try {
-                // Case-insensitive conversion
-                return PlayerType.valueOf(playerTypeStr.trim().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // No matching enum constant
-                return null;
-            }
-        }
-    }
+    // ====================================================================
+    // Players created via PlayerFactory (Singleton + Factory Method pattern)
+    // Replaces the old PlayerType enum and manual if/else instantiation.
+    // ====================================================================
+    private List<Player> players;
 
     private final Actor[] pileTextActors = { null, null };
     private final Actor[] scoreActors = {null, null, null, null};
@@ -99,7 +83,6 @@ public class GameOfThrones extends CardGame {
 
     Font bigFont = new Font("Arial", Font.BOLD, 36);
     Font smallFont = new Font("Arial", Font.PLAIN, 10);
-    PlayerType[] playerTypes = { PlayerType.HUMAN, PlayerType.HUMAN,  PlayerType.HUMAN, PlayerType.HUMAN };
     private int currentPlay = 0;
     private List<Integer> firstPlayers = new ArrayList<>();
     private int NUMBER_OF_PLAYS = 2;
@@ -121,8 +104,17 @@ public class GameOfThrones extends CardGame {
      */
     private void initWithProperties(Properties properties) {
         isAuto = Boolean.parseBoolean(properties.getProperty("isAuto"));
+
+        // ---------------------------------------------------------------
+        // Use PlayerFactory (Singleton) to create all Player instances.
+        // The factory parses config strings like "human", "random",
+        // "legal-oa,td,tm", "smart" and returns the correct subclass.
+        // ---------------------------------------------------------------
+        PlayerFactory.reset();  // Reset in case of multiple games (testing)
+        PlayerFactory factory = PlayerFactory.init(random);
+        players = factory.createAllPlayers(properties, nbPlayers);
+
         for (int i = 0; i < nbPlayers; i++) {
-            playerTypes[i] = PlayerType.fromStringToPlayerType(properties.getProperty("players." + i));
             playerMovementIndexes.add(0);
         }
 
@@ -198,30 +190,9 @@ public class GameOfThrones extends CardGame {
         return logger.getAllLog();
     }
 
-    private void sortHand(Hand hand) {
-        List<Card> cards = hand.getCardList();
-        Comparator<Card> cardComparator = (o1, o2) -> {
-            Suit suit1 = (Suit) o1.getSuit();
-            Suit suit2 = (Suit) o2.getSuit();
-            Rank rank1 = (Rank) o1.getRank();
-            Rank rank2 = (Rank) o2.getRank();
+    // Hand sorting is now handled by PlayerFactory.dealCards()
 
-            if (suit1.ordinal() - suit2.ordinal() != 0) {
-                return suit1.ordinal() - suit2.ordinal();
-            }
-
-            return rank1.getShortHandValue() - rank2.getShortHandValue();
-        };
-
-        cards.sort(cardComparator);
-    }
-
-    // return random Card from Hand
-    public static Card randomCard(Hand hand) {
-        assert !hand.isEmpty() : " random card from empty hand.";
-        int x = random.nextInt(hand.getNumberOfCards());
-        return hand.get(x);
-    }
+    // Random card selection is now handled by PlayerFactory
 
 
     private Rank getRankFromString(String cardName) {
@@ -263,82 +234,12 @@ public class GameOfThrones extends CardGame {
         return null;
     }
 
-    private void dealingOutHeartCards(Hand[] hands, Hand pack) {
-        List<Card> heartCards = pack.getCardsWithSuit(Suit.HEARTS);
-        for (int i = 0; i < nbPlayers; i++) {
-            int remainingHeartCards = nbHeartCardsPerPlayer;
-            if (isAuto) {
-                if (!initialHeartStrings.get(currentPlay).get(i).isEmpty()) {
-                    List<String> playerHeartStrings = initialHeartStrings.get(currentPlay).get(i);
-                    for (String heartString : playerHeartStrings) {
-                        Card card = getCardFromList(heartCards, heartString);
-                        assert card != null;
-                        card.removeFromHand(false);
-                        hands[i].insert(card, false);
-                        remainingHeartCards--;
-                    }
-                }
-            }
-
-            for (int j = 0; j < remainingHeartCards; j++) {
-                int x = random.nextInt(heartCards.size());
-                Card randomCard = heartCards.get(x);
-                randomCard.removeFromHand(false);
-                hands[i].insert(randomCard, false);
-            }
-        }
-    }
-
-    private void dealingOutEffectCards(Hand[] hands, Hand pack) {
-        for (int i = 0; i < nbPlayers; i++) {
-            int remainingEffectCards = nbEffectCardsPerPlayer;
-            if (isAuto) {
-                if (!initialCardStrings.get(currentPlay).get(i).isEmpty()) {
-                    List<String> playerEffectStrings = initialCardStrings.get(currentPlay).get(i);
-                    for (String effectString : playerEffectStrings) {
-                        Card card = getCardFromList(pack.getCardList(), effectString);
-                        assert card != null;
-                        card.removeFromHand(false);
-                        hands[i].insert(card, false);
-                        remainingEffectCards--;
-                    }
-                }
-            }
-            for (int j = 0; j < remainingEffectCards; j++) {
-                assert !pack.isEmpty() : " Pack has prematurely run out of cards.";
-                Card dealt = randomCard(pack);
-                dealt.removeFromHand(false);
-                hands[i].insert(dealt, false);
-            }
-        }
-    }
-
-    private void dealingOut(Hand[] hands) {
-        Hand pack = deck.toHand(false);
-        assert pack.getNumberOfCards() == 52 : " Starting pack is not 52 cards.";
-        // Remove 4 Aces
-        List<Card> aceCards = pack.getCardsWithRank(Rank.ACE);
-        for (Card card : aceCards) {
-            card.removeFromHand(false);
-        }
-        assert pack.getNumberOfCards() == 48 : " Pack without aces is not 48 cards.";
-        // Give each player 3 heart cards
-        dealingOutHeartCards(hands, pack);
-
-        assert pack.getNumberOfCards() == 36 : " Pack without aces and hearts is not 36 cards.";
-        // Give each player 9 of the remaining cards
-        dealingOutEffectCards(hands, pack);
-
-        for (int j = 0; j < nbPlayers; j++) {
-            sortHand(hands[j]);
-            logger.logPlayerCards(hands[j], j);
-            assert hands[j].getNumberOfCards() == 12 : " Hand does not have twelve cards.";
-        }
-    }
+    // Card dealing is now handled by PlayerFactory.dealCards()
+    // Card lookup utilities remain here for auto-mode play logic
 
     private void initScore() {
         for (int i = 0; i < nbPlayers; i++) {
-             scores[i] = 0;
+            scores[i] = 0;
             String text = "P" + i + "-0";
             scoreActors[i] = new TextActor(text, Color.WHITE, bgColor, bigFont);
             addActor(scoreActors[i], scoreLocations[i]);
@@ -364,37 +265,48 @@ public class GameOfThrones extends CardGame {
         }
     }
 
-   //  private Optional<Card> selected;
+    private Optional<Card> selected;
     private final int NON_SELECTION_VALUE = -1;
-    // private int selectedPileIndex = NON_SELECTION_VALUE;
+    private int selectedPileIndex = NON_SELECTION_VALUE;
     private final int UNDEFINED_INDEX = -1;
     public static final int ATTACK_RANK_INDEX = 0;
     public static final int DEFENCE_RANK_INDEX = 1;
     private void setupGame() {
-        hands = new Hand[nbPlayers];
-        for (int i = 0; i < nbPlayers; i++) {
-            hands[i] = new Hand(deck);
+        // Use PlayerFactory (Singleton) to create hands and deal cards
+        PlayerFactory factory = PlayerFactory.getInstance();
+        hands = factory.createHands(deck, nbPlayers);
+        factory.dealCards(hands, deck, nbPlayers, isAuto,
+                initialHeartStrings.get(currentPlay),
+                initialCardStrings.get(currentPlay));
+
+        // Log player cards after dealing
+        for (int j = 0; j < nbPlayers; j++) {
+            logger.logPlayerCards(hands[j], j);
         }
-        dealingOut(hands);
+
+        // Assign dealt hands to Player objects so they can use them polymorphically
+        for (int i = 0; i < nbPlayers; i++) {
+            players.get(i).assignInitialHand(hands[i]);
+        }
 
         for (int i = 0; i < nbPlayers; i++) {
             hands[i].sort(Hand.SortType.SUITPRIORITY, true);
             System.out.println("hands[" + i + "]: " + canonical(hands[i]));
         }
 
-//        for (final Hand currentHand : hands) {
-//            // Set up human player for interaction
-//            currentHand.addCardListener(new CardAdapter() {
-//                public void leftDoubleClicked(Card card) {
-//                    selected = Optional.of(card);
-//                    currentHand.setTouchEnabled(false);
-//                }
-//                public void rightClicked(Card card) {
-//                    selected = Optional.empty(); // Don't care which card we right-clicked for player to pass
-//                    currentHand.setTouchEnabled(false);
-//                }
-//            });
-//        }
+        for (final Hand currentHand : hands) {
+            // Set up human player for interaction
+            currentHand.addCardListener(new CardAdapter() {
+                public void leftDoubleClicked(Card card) {
+                    selected = Optional.of(card);
+                    currentHand.setTouchEnabled(false);
+                }
+                public void rightClicked(Card card) {
+                    selected = Optional.empty(); // Don't care which card we right-clicked for player to pass
+                    currentHand.setTouchEnabled(false);
+                }
+            });
+        }
         // graphics
         RowLayout[] layouts = new RowLayout[nbPlayers];
         for (int i = 0; i < nbPlayers; i++) {
@@ -438,64 +350,45 @@ public class GameOfThrones extends CardGame {
         updatePileRanks();
     }
 
-//    private void pickACorrectSuit(int playerIndex, boolean isCharacter) {
-//        Hand currentHand = hands[playerIndex];
-//        List<Card> shortListCards = new ArrayList<>();
-//        for (int i = 0; i < currentHand.getCardList().size(); i++) {
-//            Card card = currentHand.getCardList().get(i);
-//            Suit suit = (Suit) card.getSuit();
-//            if (suit.isCharacter() == isCharacter) {
-//                shortListCards.add(card);
-//            }
-//        }
-//        if (shortListCards.isEmpty() || !isCharacter && random.nextInt(3) == 0) {
-//            selected = Optional.empty();
-//        } else {
-//            selected = Optional.of(shortListCards.get(random.nextInt(shortListCards.size())));
-//        }
-//    }
+    // pickACorrectSuit and selectRandomPile removed — replaced by
+    // Player.selectCardToPlay() and Player.choosePileToPlayOn() polymorphic dispatch
 
-//    private void selectRandomPile() {
-//        selectedPileIndex = random.nextInt(2);
-//    }
+    private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
+        if (hands[playerIndex].isEmpty()) {
+            selected = Optional.empty();
+        } else {
+            selected = null;
+            hands[playerIndex].setTouchEnabled(true);
+            do {
+                if (selected == null) {
+                    delay(100);
+                    continue;
+                }
+                Suit suit = selected.isPresent() ? (Suit) selected.get().getSuit() : null;
+                if (isCharacter && suit != null && suit.isCharacter() ||         // If we want character, can't pass and suit must be right
+                        !isCharacter && (suit == null || !suit.isCharacter())) { // If we don't want character, can pass or suit must not be character
+                    break;
+                } else {
+                    selected = null;
+                    hands[playerIndex].setTouchEnabled(true);
+                }
+                delay(100);
+            } while (true);
+        }
+    }
 
-//    private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
-//        if (hands[playerIndex].isEmpty()) {
-//            selected = Optional.empty();
-//        } else {
-//            selected = null;
-//            hands[playerIndex].setTouchEnabled(true);
-//            do {
-//                if (selected == null) {
-//                    delay(100);
-//                    continue;
-//                }
-//                Suit suit = selected.isPresent() ? (Suit) selected.get().getSuit() : null;
-//                if (isCharacter && suit != null && suit.isCharacter() ||         // If we want character, can't pass and suit must be right
-//                        !isCharacter && (suit == null || !suit.isCharacter())) { // If we don't want character, can pass or suit must not be character
-//                    // if (suit != null && suit.isCharacter() == isCharacter) {
-//                    break;
-//                } else {
-//                    selected = null;
-//                    hands[playerIndex].setTouchEnabled(true);
-//                }
-//                delay(100);
-//            } while (true);
-//        }
-//    }
-
-//    private void waitForPileSelection() {
-//        selectedPileIndex = NON_SELECTION_VALUE;
-//        for (Hand pile : piles) {
-//            pile.setTouchEnabled(true);
-//        }
-//        while(selectedPileIndex == NON_SELECTION_VALUE) {
-//            delay(100);
-//        }
-//        for (Hand pile : piles) {
-//            pile.setTouchEnabled(false);
-//        }
-//    }
+    private void waitForPileSelection() {
+        selectedPileIndex = NON_SELECTION_VALUE;
+        for (Hand pile : piles) {
+            pile.setTouchEnabled(true);
+        }
+        while(selectedPileIndex == NON_SELECTION_VALUE) {
+            delay(100);
+        }
+        for (Hand pile : piles) {
+            pile.setTouchEnabled(false);
+        }
+    }
 
     private int[] calculatePileRanks(int pileIndex) {
         Hand currentPile = piles[pileIndex];
@@ -522,7 +415,14 @@ public class GameOfThrones extends CardGame {
         return index % nbPlayers;
     }
 
-    // TODO: Refactor playHeartForCharacters and playTurns into Board (GameEngine)
+    /**
+     * Helper: checks if the player at playerIndex is a human.
+     * Uses the Player objects created by PlayerFactory instead of the old PlayerType enum.
+     */
+    private boolean isHumanPlayer(int playerIndex) {
+        return players.get(playerIndex) instanceof HumanPlayer;
+    }
+
     private void playHeartForCharacters() {
         // 1: play the first 2 hearts
         nextStartingPlayer = -1;
@@ -567,10 +467,12 @@ public class GameOfThrones extends CardGame {
 
             if (selected.isEmpty()) {
                 pileIndex = i % 2;
-                if (playerTypes[playerIndex] == PlayerType.HUMAN) {
+                // Polymorphic dispatch: each Player subclass implements its own card selection
+                Player currentPlayer = players.get(playerIndex);
+                if (isHumanPlayer(playerIndex)) {
                     waitForCorrectSuit(playerIndex, true);
                 } else {
-                    pickACorrectSuit(playerIndex, true);
+                    selected = currentPlayer.selectCardToPlay(null, true);
                 }
             }
 
@@ -612,18 +514,20 @@ public class GameOfThrones extends CardGame {
             if (!hasSelectedCard || selected.isEmpty()) {
                 nextPlayer = getPlayerIndex(nextPlayer);
                 setStatusText("Player" + nextPlayer + " select a non-Heart card to play.");
-                if (playerTypes[nextPlayer] == PlayerType.HUMAN) {
+                // Polymorphic dispatch: each Player subclass implements its own card selection
+                Player currentPlayer = players.get(nextPlayer);
+                if (isHumanPlayer(nextPlayer)) {
                     waitForCorrectSuit(nextPlayer, false);
                 } else {
-                    pickACorrectSuit(nextPlayer, false);
+                    selected = currentPlayer.selectCardToPlay(null, false);
                 }
 
                 if (selected.isPresent()) {
                     setStatusText("Selected: " + canonical(selected.get()) + ". Player" + nextPlayer + " select a pile to play the card.");
-                    if (playerTypes[nextPlayer] == PlayerType.HUMAN) {
+                    if (isHumanPlayer(nextPlayer)) {
                         waitForPileSelection();
                     } else {
-                        selectRandomPile();
+                        selectedPileIndex = currentPlayer.choosePileToPlayOn();
                     }
                 } else {
                     System.out.println(". Player" + nextPlayer + "Pass.");
@@ -631,17 +535,18 @@ public class GameOfThrones extends CardGame {
                 }
             }
 
-            selected.get().setVerso(false);
-            selected.get().transfer(piles[selectedPileIndex], true); // transfer to pile (includes graphic effect)
-            updatePileRanks();
-            logger.logPlayerMovement(nextPlayer, selected.get(), selectedPileIndex);
+            if (selected != null && selected.isPresent()) {
+                selected.get().setVerso(false);
+                selected.get().transfer(piles[selectedPileIndex], true); // transfer to pile (includes graphic effect)
+                updatePileRanks();
+                logger.logPlayerMovement(nextPlayer, selected.get(), selectedPileIndex);
+            }
 
             nextPlayer = (nextPlayer + 1) % nbPlayers;
             remainingTurns--;
         }
     }
 
-    // TODO: Refactor into
     private void updateScoreForPlayers(int[] pileNorthRanks, int[] pileSouthRanks) {
         System.out.println("pile north: " + canonical(piles[Pile.NORTH.ordinal()]));
         System.out.println("pile north is " + "Attack: " + pileNorthRanks[ATTACK_RANK_INDEX] + " - Defence: " + pileNorthRanks[DEFENCE_RANK_INDEX]);
