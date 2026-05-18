@@ -59,13 +59,13 @@ public class Board implements PileInformation {
     @Override
     public int getPileAttack(int pileIndex) {
         // Implement logic to compute the attack value for the pile
-        return 0;
+        return CharacterBuilder.fromCards(getPileCards(pileIndex)).map(AffectedCharacter::getAttack).orElse(0);
     }
 
     @Override
     public int getPileDefence(int pileIndex) {
         // Implement logic to compute the defence value for the pile
-        return 0;
+        return CharacterBuilder.fromCards(getPileCards(pileIndex)).map(AffectedCharacter::getDefence).orElse(0);
     }
 
     @Override
