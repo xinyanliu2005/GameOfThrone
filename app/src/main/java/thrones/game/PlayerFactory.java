@@ -213,7 +213,7 @@ public class PlayerFactory {
 
     private void dealHeartCards(Hand[] hands, Hand pack, int nbPlayers,
                                 boolean isAuto, List<List<String>> initialHeartStrings) {
-        List<Card> heartCards = pack.getCardsWithSuit(Suit.HEARTS);
+        List<Card> heartCards = new ArrayList<>(pack.getCardsWithSuit(Suit.HEARTS));
         for (int i = 0; i < nbPlayers; i++) {
             int remaining = NB_HEART_CARDS_PER_PLAYER;
 
@@ -225,6 +225,7 @@ public class PlayerFactory {
                     assert card != null;
                     card.removeFromHand(false);
                     hands[i].insert(card, false);
+                    heartCards.remove(card);
                     remaining--;
                 }
             }
@@ -234,6 +235,7 @@ public class PlayerFactory {
                 Card randomCard = heartCards.get(x);
                 randomCard.removeFromHand(false);
                 hands[i].insert(randomCard, false);
+                heartCards.remove(randomCard);
             }
         }
     }
