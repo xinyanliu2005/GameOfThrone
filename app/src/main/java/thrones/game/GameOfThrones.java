@@ -284,6 +284,11 @@ public class GameOfThrones extends CardGame {
             logger.logPlayerCards(hands[j], j);
         }
 
+        // Assign dealt hands to Player objects so they can use them polymorphically
+        for (int i = 0; i < nbPlayers; i++) {
+            players.get(i).assignInitialHand(hands[i]);
+        }
+
         for (int i = 0; i < nbPlayers; i++) {
             hands[i].sort(Hand.SortType.SUITPRIORITY, true);
             System.out.println("hands[" + i + "]: " + canonical(hands[i]));
@@ -345,26 +350,8 @@ public class GameOfThrones extends CardGame {
         updatePileRanks();
     }
 
-    private void pickACorrectSuit(int playerIndex, boolean isCharacter) {
-        Hand currentHand = hands[playerIndex];
-        List<Card> shortListCards = new ArrayList<>();
-        for (int i = 0; i < currentHand.getCardList().size(); i++) {
-            Card card = currentHand.getCardList().get(i);
-            Suit suit = (Suit) card.getSuit();
-            if (suit.isCharacter() == isCharacter) {
-                shortListCards.add(card);
-            }
-        }
-        if (shortListCards.isEmpty() || !isCharacter && random.nextInt(3) == 0) {
-            selected = Optional.empty();
-        } else {
-            selected = Optional.of(shortListCards.get(random.nextInt(shortListCards.size())));
-        }
-    }
-
-    private void selectRandomPile() {
-        selectedPileIndex = random.nextInt(2);
-    }
+    // pickACorrectSuit and selectRandomPile removed — replaced by
+    // Player.selectCardToPlay() and Player.choosePileToPlayOn() polymorphic dispatch
 
     private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
         if (hands[playerIndex].isEmpty()) {
@@ -480,11 +467,12 @@ public class GameOfThrones extends CardGame {
 
             if (selected.isEmpty()) {
                 pileIndex = i % 2;
-                // Factory-created players: use instanceof instead of PlayerType enum
+                // Polymorphic dispatch: each Player subclass implements its own card selection
+                Player currentPlayer = players.get(playerIndex);
                 if (isHumanPlayer(playerIndex)) {
                     waitForCorrectSuit(playerIndex, true);
                 } else {
-                    pickACorrectSuit(playerIndex, true);
+                    selected = currentPlayer.selectCardToPlay(null, true);
                 }
             }
 
@@ -526,11 +514,12 @@ public class GameOfThrones extends CardGame {
             if (!hasSelectedCard || selected.isEmpty()) {
                 nextPlayer = getPlayerIndex(nextPlayer);
                 setStatusText("Player" + nextPlayer + " select a non-Heart card to play.");
-                // Factory-created players: use instanceof instead of PlayerType enum
+                // Polymorphic dispatch: each Player subclass implements its own card selection
+                Player currentPlayer = players.get(nextPlayer);
                 if (isHumanPlayer(nextPlayer)) {
                     waitForCorrectSuit(nextPlayer, false);
                 } else {
-                    pickACorrectSuit(nextPlayer, false);
+                    selected = currentPlayer.selectCardToPlay(null, false);
                 }
 
                 if (selected.isPresent()) {
@@ -538,7 +527,7 @@ public class GameOfThrones extends CardGame {
                     if (isHumanPlayer(nextPlayer)) {
                         waitForPileSelection();
                     } else {
-                        selectRandomPile();
+                        selectedPileIndex = currentPlayer.choosePileToPlayOn();
                     }
                 } else {
                     System.out.println(". Player" + nextPlayer + "Pass.");
@@ -546,10 +535,12 @@ public class GameOfThrones extends CardGame {
                 }
             }
 
-            selected.get().setVerso(false);
-            selected.get().transfer(piles[selectedPileIndex], true); // transfer to pile (includes graphic effect)
-            updatePileRanks();
-            logger.logPlayerMovement(nextPlayer, selected.get(), selectedPileIndex);
+            if (selected != null && selected.isPresent()) {
+                selected.get().setVerso(false);
+                selected.get().transfer(piles[selectedPileIndex], true); // transfer to pile (includes graphic effect)
+                updatePileRanks();
+                logger.logPlayerMovement(nextPlayer, selected.get(), selectedPileIndex);
+            }
 
             nextPlayer = (nextPlayer + 1) % nbPlayers;
             remainingTurns--;
