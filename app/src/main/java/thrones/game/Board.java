@@ -8,14 +8,13 @@ import java.util.Optional;
 
 public class Board implements PileInformation {
 
-    private final Hand[] piles;
+    private final Hand[] piles = new Hand[2];
     private final List<Player> players;
     private final int[] scores;
 
     // Optional: Pass an Observer here if you want the Board to notify GameOfThrones to redraw UI
-    public Board(List<Player> players, Hand[] piles) {
+    public Board(List<Player> players) {
         this.players = players;
-        this.piles = piles;
         this.scores = new int[players.size()];
     }
 
