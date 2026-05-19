@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class PlayerFactoryTest {
 
     private PlayerFactory factory;
@@ -192,6 +194,34 @@ public class PlayerFactoryTest {
                 "11H", "12H", "13H",
                 "5D", "6D", "7D", "8D", "9D", "10D", "11D", "12D", "13D"
         );
+    }
+
+    @Test
+    public void testLoadAutoPlayMovementsStoresMovesInsidePlayers() {
+        Properties properties = new Properties();
+
+        properties.setProperty("players.0", "human");
+        properties.setProperty("players.1", "human");
+        properties.setProperty("players.2", "human");
+        properties.setProperty("players.3", "human");
+
+        properties.setProperty("plays.0.players.0.cardsPlayed", "7H-0, 6C-1");
+        properties.setProperty("plays.1.players.0.cardsPlayed", "8H-1");
+
+        PlayerFactory.reset();
+        PlayerFactory factory = PlayerFactory.init(new Random(1));
+
+        List<Player> players = factory.createAllPlayers(properties, 4);
+        factory.loadAutoPlayMovements(players, properties, 2);
+
+        Player player0 = players.get(0);
+
+        assertEquals("7H-0", player0.getMoveData().getNextMoveString(0));
+        assertEquals("6C-1", player0.getMoveData().getNextMoveString(0));
+
+        player0.getMoveData().resetIndex();
+
+        assertEquals("8H-1", player0.getMoveData().getNextMoveString(1));
     }
 
     // ------------------------------------------------------------------

@@ -157,6 +157,10 @@ public class PlayerFactory {
                 String value = properties.getProperty(key);
                 if (value != null && !value.trim().isEmpty()) {
                     List<String> moves = Arrays.asList(value.split(","));
+//                    List<String> moves = Arrays.stream(value.split(","))
+//                            .map(String::trim)
+//                            .filter(s -> !s.isEmpty())
+//                            .toList();
                     moveData.setMoves(playIndex, moves);
                 }
             }
