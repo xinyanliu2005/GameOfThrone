@@ -9,7 +9,7 @@ import java.util.Optional;
 public class LegalBotPlayer extends Player {
     private List<String> considerationCodes;
 
-    private BotStrategy coreStrategy;
+    private CompositeStrategy coreStrategy;
     private int pendingPileIndex = -1;
 
 
