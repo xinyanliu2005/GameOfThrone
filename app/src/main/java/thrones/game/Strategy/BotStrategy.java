@@ -6,8 +6,8 @@ import java.util.Optional;
 
 public interface BotStrategy {
     /**
-     * Evaluates the hand and board to determine a move.
+     * Evaluates selected card.
      * @return A BotMove containing the chosen Card and Pile, or Optional.empty() if the strategy doesn't apply.
      */
-    Optional<BotMove> determineMove(List<Card> validCards, PileInformation boardInfo, boolean isCharacterRound, int playerIdentifier);
+    public Optional<BotMove> determineMove(Card selectedCard, int targetPileIndex, PileInformation boardInfo, int playerIdentifier);
 }
