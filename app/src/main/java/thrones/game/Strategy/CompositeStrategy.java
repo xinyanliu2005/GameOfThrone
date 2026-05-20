@@ -14,17 +14,24 @@ public class CompositeStrategy implements BotStrategy {
     }
 
     @Override
-    public Optional<BotMove> determineMove(List<Card> validCards, PileInformation boardInfo, boolean isCharacterRound, int playerIdentifier) {
-        for (BotStrategy strategy : strategies) {
-            Optional<BotMove> move = strategy.determineMove(validCards, boardInfo, isCharacterRound, playerIdentifier);
+    public Optional<BotMove> determineMove(Card selectedCard, int targetPileIndex, PileInformation boardInfo, int playerIdentifier) {
+        // If there are no configured strategies, default to dealing it safely
+        if (strategies.isEmpty()) {
+            return Optional.of(new BotMove(selectedCard, targetPileIndex));
+        }
 
-            // If the strategy found a valid move, return it immediately
-            if (move.isPresent()) {
-                return move;
+        // Evaluate the card across ALL active strategies sequentially
+        for (BotStrategy strategy : strategies) {
+            Optional<BotMove> evaluationResult = strategy.determineMove(selectedCard, targetPileIndex, boardInfo, playerIdentifier);
+
+            // If ANY active consideration rule broke,
+            // then it fails our overall strict constraints, and we must pass.
+            if (evaluationResult.isEmpty()) {
+                return Optional.empty();
             }
         }
 
-        // No strategies yielded a move (falls back to random or pass)
-        return Optional.empty();
+        // The move successfully satisfied or survived every consideration check
+        return Optional.of(new BotMove(selectedCard, targetPileIndex));
     }
 }
