@@ -65,7 +65,7 @@ public class LegalBotPlayer extends Player {
             return Optional.of(selectedCard);
         }
 
-        // The move violated all the considerations, we will pass
+        // The move violated one of the considerations, we will pass
         this.pendingPileIndex = -1;
         return Optional.empty();
     }
