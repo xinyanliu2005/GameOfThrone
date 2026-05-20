@@ -143,7 +143,7 @@ public class PlayerFactory {
                 }
             }
         }
-        return new LegalBotPlayer(playerIndex, random, considerationCodes);
+        return new LegalBotPlayer(playerIndex, considerationCodes);
     }
 
     // ===================================================================
