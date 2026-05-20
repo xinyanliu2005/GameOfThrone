@@ -12,15 +12,10 @@ public class LegalBotPlayer extends Player {
     private BotStrategy coreStrategy;
     private int pendingPileIndex = -1;
 
-    private final int NORTH = 0;
-    private final int SOUTH = 1;
-    private int teamPile;
 
     public LegalBotPlayer(int playerIdentifier, List<String> considerationCodes) {
         super(playerIdentifier);
         this.considerationCodes = considerationCodes != null ? considerationCodes : new ArrayList<>();
-        if (playerIdentifier % 2 == 0) teamPile = NORTH;
-        else teamPile = SOUTH;
 
         coreStrategy = buildStrategy(considerationCodes);
     }
