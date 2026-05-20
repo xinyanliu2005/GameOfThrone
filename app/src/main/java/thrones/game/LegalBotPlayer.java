@@ -17,7 +17,7 @@ public class LegalBotPlayer extends Player {
         super(playerIdentifier);
         this.considerationCodes = considerationCodes != null ? considerationCodes : new ArrayList<>();
 
-        coreStrategy = buildStrategy(considerationCodes);
+        coreStrategy = buildStrategy(this.considerationCodes);
     }
 
     public List<String> getConsiderationCodes() {
