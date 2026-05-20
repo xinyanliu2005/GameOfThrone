@@ -52,15 +52,16 @@ public class LegalBotPlayer extends Player {
             return Optional.empty();
         }
 
-        int autoCandidatePileIndex = getAutoPileIndex();
+        // Get the current turn desired card and target pile
         Card selectedCard = autoCandidateCard.get();
+        int autoCandidatePileIndex = getAutoPileIndex();
 
-        // Determine our turn move based on configed consideration
+        // Determine whether it breaks any consideration
         Optional<BotMove> validatedMove = coreStrategy.determineMove(selectedCard, autoCandidatePileIndex,
                 currentBoard, getPlayerIdentifier());
 
         if (validatedMove.isPresent()) {
-            this.pendingPileIndex = autoCandidatePileIndex;
+            this.pendingPileIndex = validatedMove.get().getTargetPileIndex();
             return Optional.of(selectedCard);
         }
 
