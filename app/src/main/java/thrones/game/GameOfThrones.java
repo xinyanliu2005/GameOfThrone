@@ -73,7 +73,6 @@ public class GameOfThrones extends CardGame {
     private final Actor[] pileTextActors = { null, null };
     private final Actor[] scoreActors = {null, null, null, null};
     private final int watchingTime = 5000;
-    private Hand[] hands;
     private Hand[] piles;
 
     private int nextStartingPlayer = random.nextInt(nbPlayers);
@@ -219,27 +218,25 @@ public class GameOfThrones extends CardGame {
     private void setupGame() {
         // Use PlayerFactory (Singleton) to create hands and deal cards
         PlayerFactory factory = PlayerFactory.getInstance();
-        hands = factory.createHands(deck, nbPlayers);
-        factory.dealCards(hands, deck, nbPlayers, isAuto,
+        Hand[] initialHands = factory.createHands(deck, nbPlayers);
+        factory.dealCards(initialHands, deck, nbPlayers, isAuto,
                 initialHeartStrings.get(currentPlay),
                 initialCardStrings.get(currentPlay));
 
-        // Log player cards after dealing
-        for (int j = 0; j < nbPlayers; j++) {
-            logger.logPlayerCards(hands[j], j);
-        }
-
-        // Assign dealt hands to Player objects so they can use them polymorphically
+        // Assign dealt hands to Player
         for (int i = 0; i < nbPlayers; i++) {
-            players.get(i).assignInitialHand(hands[i]);
+            players.get(i).assignInitialHand(initialHands[i]);
+            logger.logPlayerCards(initialHands[i], i);
         }
 
         for (int i = 0; i < nbPlayers; i++) {
-            hands[i].sort(Hand.SortType.SUITPRIORITY, true);
-            System.out.println("hands[" + i + "]: " + canonical(hands[i]));
+            Player player = players.get(i);
+            player.getPlayerHand().sort(Hand.SortType.SUITPRIORITY, true);
+            System.out.println("hands[" + i + "]: " + canonical(player.getPlayerHand()));
         }
 
-        for (final Hand currentHand : hands) {
+        for (int i = 0; i < nbPlayers; i++) {
+            final Hand currentHand = players.get(i).getPlayerHand();
             // Set up human player for interaction
             currentHand.addCardListener(new CardAdapter() {
                 public void leftDoubleClicked(Card card) {
@@ -258,8 +255,8 @@ public class GameOfThrones extends CardGame {
             int handWidth = 400;
             layouts[i] = new RowLayout(handLocations[i], handWidth);
             layouts[i].setRotationAngle(90 * i);
-            hands[i].setView(this, layouts[i]);
-            hands[i].draw();
+            players.get(i).getPlayerHand().setView(this, layouts[i]);
+            players.get(i).getPlayerHand().draw();
         }
         // End graphics
     }
@@ -299,11 +296,12 @@ public class GameOfThrones extends CardGame {
     // Player.selectCardToPlay() and Player.choosePileToPlayOn() polymorphic dispatch
 
     private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
-        if (hands[playerIndex].isEmpty()) {
+        Player currentPlayer = players.get(playerIndex);
+        if (currentPlayer.getPlayerHand().isEmpty()) {
             selected = Optional.empty();
         } else {
             selected = null;
-            hands[playerIndex].setTouchEnabled(true);
+            currentPlayer.getPlayerHand().setTouchEnabled(true);
             do {
                 if (selected == null) {
                     delay(100);
@@ -315,7 +313,7 @@ public class GameOfThrones extends CardGame {
                     break;
                 } else {
                     selected = null;
-                    hands[playerIndex].setTouchEnabled(true);
+                    currentPlayer.getPlayerHand().setTouchEnabled(true);
                 }
                 delay(100);
             } while (true);
@@ -378,11 +376,11 @@ public class GameOfThrones extends CardGame {
 
         if (nextStartingPlayer < 0) {
             nextStartingPlayer = getPlayerIndex(nextStartingPlayer);
-            if (hands[nextStartingPlayer].getNumberOfCardsWithSuit(Suit.HEARTS) == 0)
+            if (players.get(nextStartingPlayer).getPlayerHand().getNumberOfCardsWithSuit(Suit.HEARTS) == 0)
                 nextStartingPlayer = getPlayerIndex(nextStartingPlayer + 1);
         }
 
-        assert hands[nextStartingPlayer].getNumberOfCardsWithSuit(Suit.HEARTS) != 0 : " Starting player has no hearts.";
+        assert players.get(nextStartingPlayer).getPlayerHand().getNumberOfCardsWithSuit(Suit.HEARTS) != 0 : " Starting player has no hearts.";
 
         for (int i = 0; i < 2; i++) {
             int pileIndex = 0;
