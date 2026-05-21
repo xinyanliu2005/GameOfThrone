@@ -11,5 +11,6 @@ public interface PileInformation {
     int getPileDefence(int pileIndex);
     Optional<Card> getLastPlayedCard(int pileIndex);
     List<Card> getPileCards(int pileIndex);
-    int getPlayerScore(int playerIndex);
+    int getScore(int pileIndex);
+    int getPlayIndex();
 }

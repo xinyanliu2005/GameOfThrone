@@ -18,18 +18,18 @@ public abstract class Player {
      * Data class for storing all auto-play move information for this player.
      * Stores moves as Rank-Suit-Deck strings (e.g., "2H-0") for each play index.
      */
-    public class MoveData {
+    private class MoveData {
         private Map<Integer, List<String>> movesByPlay = new HashMap<>();
         private int currentIndex = 0;
         private int lastPileIndex = -1;
 
         /** @param playIndex Current round number
          * @param moves Moves to perform for the round */
-        public void setMoves(int playIndex, List<String> moves) {
+        private void setMoves(int playIndex, List<String> moves) {
             movesByPlay.put(playIndex, new ArrayList<>(moves));
         }
 
-        public String getNextMoveString(int playIndex) {
+        private String getNextMoveString(int playIndex) {
             List<String> moves = movesByPlay.get(playIndex);
             if (moves != null && currentIndex < moves.size()) {
                 return moves.get(currentIndex++);
@@ -37,7 +37,7 @@ public abstract class Player {
             return null;
         }
 
-        public void resetIndex() {
+        private void resetIndex() {
             currentIndex = 0;
         }
     }
