@@ -1,6 +1,7 @@
 package thrones.game;
 
 import ch.aplu.jcardgame.Card;
+import ch.aplu.jcardgame.Deck;
 import ch.aplu.jcardgame.Hand;
 import thrones.game.effectCard.AffectedCharacter;
 import thrones.game.effectCard.CharacterBuilder;
@@ -16,8 +17,20 @@ public class Board implements PileInformation {
     private final int[] scores;
     private int playIndex = 0;
 
-    public Board(int playerSize) {
+    public Board(int playerSize, Deck deck) {
         this.scores = new int[playerSize];
+        piles[0] = new Hand(deck);
+        piles[1] = new Hand(deck);
+    }
+
+    public void resetPiles() {
+        for (Hand pile : piles) {
+            pile.removeAll(true);
+        }
+    }
+
+    public Hand[] getPiles() {
+        return piles;
     }
 
     public void setPlayIndex(int playIndex) {
@@ -32,11 +45,6 @@ public class Board implements PileInformation {
     public void executeAPlay(BotMove move) {
         int targetPile = move.getTargetPileIndex();
         move.getCard().transfer(piles[targetPile], true);
-        // Initialize the pile if it's null after the first card is played
-        if (piles[targetPile] == null) {
-            piles[targetPile] = new Hand(null);
-            move.getCard().transfer(piles[targetPile], true);
-        }
     }
     
 
