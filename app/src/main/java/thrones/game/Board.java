@@ -13,9 +13,19 @@ public class Board implements PileInformation {
     private final int SOUTH = 1;
     private final Hand[] piles = new Hand[2];
     private final int[] scores;
+    private int playIndex = 0;
 
     public Board(int playerSize) {
         this.scores = new int[playerSize];
+    }
+
+    public void setPlayIndex(int playIndex) {
+        this.playIndex = playIndex;
+    }
+
+    @Override
+    public int getPlayIndex() {
+        return playIndex;
     }
 
     public void executeAPlay(BotMove move) {
@@ -24,7 +34,7 @@ public class Board implements PileInformation {
         // Initialize the pile if it's null after the first card is played
         if (piles[targetPile] == null) {
             piles[targetPile] = new Hand(null);
-            piles[targetPile].insert(move.getCard(), true);
+            move.getCard().transfer(piles[targetPile], true);
         }
     }
     
@@ -53,6 +63,8 @@ public class Board implements PileInformation {
             // North wins defense, gets South's heart value
             updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
         }
+
+        playIndex++;
     }
 
     private void updateScore(int targetPile, int score) {

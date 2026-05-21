@@ -31,13 +31,10 @@ public class LegalBotPlayer extends Player {
             return Optional.empty();
         }
 
-        // By checking score to see which turn we are
+        // By checking board for the current play index
         int currentPlayIndex = 0;
         if (currentBoard != null) {
-            int combinedScore = currentBoard.getScore(0) * 2 + currentBoard.getScore(1) * 2;
-            if (combinedScore > 0) {
-                currentPlayIndex = 1;
-            }
+            currentPlayIndex = currentBoard.getPlayIndex();
         }
 
         // Get this turn play card
