@@ -86,8 +86,6 @@ public class GameOfThrones extends CardGame {
     private int currentPlay = 0;
     private List<Integer> firstPlayers = new ArrayList<>();
     private int NUMBER_OF_PLAYS = 2;
-    private List<List<List<String>>> playerAutoMovements = new ArrayList<>();
-    private List<Integer> playerMovementIndexes = new ArrayList<>();
     private List<List<List<String>>> initialCardStrings = new ArrayList<>();
     private List<List<List<String>>> initialHeartStrings = new ArrayList<>();
 
@@ -114,8 +112,9 @@ public class GameOfThrones extends CardGame {
         PlayerFactory factory = PlayerFactory.init(random);
         players = factory.createAllPlayers(properties, nbPlayers);
 
-        for (int i = 0; i < nbPlayers; i++) {
-            playerMovementIndexes.add(0);
+        // Load auto-play movement data into each Player's MoveData
+        if (isAuto) {
+            factory.loadAutoPlayMovements(players, properties, nbPlays);
         }
 
         for (int i = 0; i < NUMBER_OF_PLAYS; i++) {
@@ -129,7 +128,6 @@ public class GameOfThrones extends CardGame {
 
         for (int i = 0; i < NUMBER_OF_PLAYS; i++) {
             initialCardStrings.add(new ArrayList<>());
-            playerAutoMovements.add(new ArrayList<>());
             initialHeartStrings.add(new ArrayList<>());
             for (int j = 0; j < nbPlayers; j++) {
                 String initialCardKey = "plays." + i + ".players." + j + ".initialCards";
@@ -137,13 +135,6 @@ public class GameOfThrones extends CardGame {
                 initialCardStrings.get(i).add(new ArrayList<>());
                 if (initialStrings != null) {
                     initialCardStrings.get(i).get(j).addAll(initialStrings);
-                }
-
-                String movementCardKey = "plays." + i + ".players." + j + ".cardsPlayed";
-                List<String> movementStrings = cardListFromKey(properties, movementCardKey);
-                playerAutoMovements.get(i).add(new ArrayList<>());
-                if (movementStrings != null) {
-                    playerAutoMovements.get(i).get(j).addAll(movementStrings);
                 }
 
                 String heartCardKey = "plays." + i + ".players." + j + ".initialHearts";
@@ -190,52 +181,7 @@ public class GameOfThrones extends CardGame {
         return logger.getAllLog();
     }
 
-    // Hand sorting is now handled by PlayerFactory.dealCards()
-
-    // Random card selection is now handled by PlayerFactory
-
-
-    private Rank getRankFromString(String cardName) {
-        String rankString = cardName.substring(0, cardName.length() - 1);
-        Integer rankValue = Integer.parseInt(rankString);
-
-        for (Rank rank : Rank.values()) {
-            if (rank.getShortHandValue() == rankValue) {
-                return rank;
-            }
-        }
-
-        return Rank.ACE;
-    }
-
-    private Suit getSuitFromString(String cardName) {
-        String suitString = cardName.substring(cardName.length() - 1, cardName.length());
-
-        for (Suit suit : Suit.values()) {
-            if (suit.getSuitShortHand().equals(suitString)) {
-                return suit;
-            }
-        }
-        return Suit.CLUBS;
-    }
-
-    private Card getCardFromList(List<Card> cards, String cardName) {
-        Rank existingRank = getRankFromString(cardName);
-        Suit existingSuit = getSuitFromString(cardName);
-        for (Card card : cards) {
-            Suit suit = (Suit) card.getSuit();
-            Rank rank = (Rank) card.getRank();
-            if (suit.getSuitShortHand().equals(existingSuit.getSuitShortHand())
-                    && rank.getShortHandValue() == existingRank.getShortHandValue()) {
-                return card;
-            }
-        }
-
-        return null;
-    }
-
-    // Card dealing is now handled by PlayerFactory.dealCards()
-    // Card lookup utilities remain here for auto-mode play logic
+    // Card dealing and card lookup are now handled by PlayerFactory and Player.MoveData
 
     private void initScore() {
         for (int i = 0; i < nbPlayers; i++) {
@@ -320,8 +266,8 @@ public class GameOfThrones extends CardGame {
     }
 
     private void resetIndexes() {
-        for (int i = 0; i < playerMovementIndexes.size(); i++) {
-            playerMovementIndexes.set(i, 0);
+        for (Player player : players) {
+            player.getMoveData().resetIndex();
         }
     }
 
@@ -447,21 +393,10 @@ public class GameOfThrones extends CardGame {
             int playerIndex = getPlayerIndex(nextStartingPlayer + i);
             setStatusText("Player " + playerIndex + " select a Heart card to play");
             if (isAuto) {
-                if (playerAutoMovements.size() > currentPlay) {
-                    List<List<String>>playersCards = playerAutoMovements.get(currentPlay);
-                    if (playersCards.size() > playerIndex) {
-                        List<String> movementStrings =  playersCards.get(playerIndex);
-                        Hand currentHand = hands[playerIndex];
-                        int playerMovementIndex = playerMovementIndexes.get(playerIndex);
-                        if (movementStrings.size() > playerMovementIndex) {
-                            String movementString = movementStrings.get(playerMovementIndex);
-                            String[] components = movementString.split("-");
-                            String cardString = components[0];
-                            pileIndex = Integer.parseInt(components[1]);
-                            selected = Optional.ofNullable(getCardFromList(currentHand.getCardList(), cardString));
-                            playerMovementIndexes.set(playerIndex, playerMovementIndex + 1);
-                        }
-                    }
+                Player currentPlayer = players.get(playerIndex);
+                selected = currentPlayer.playAutoCard(currentPlay);
+                if (selected.isPresent()) {
+                    pileIndex = currentPlayer.getAutoPileIndex();
                 }
             }
 
@@ -492,22 +427,13 @@ public class GameOfThrones extends CardGame {
         while(remainingTurns > 0) {
             boolean hasSelectedCard = false;
             if (isAuto) {
-                List<List<String>>playersCards = playerAutoMovements.get(currentPlay);
-                if (playersCards.size() > nextPlayer) {
-                    List<String> movementStrings =  playersCards.get(nextPlayer);
-                    Hand currentHand = hands[nextPlayer];
-                    int playerMovementIndex = playerMovementIndexes.get(nextPlayer);
-                    if (movementStrings.size() > playerMovementIndex) {
-                        String movementString = movementStrings.get(playerMovementIndex);
-                        String[] components = movementString.split("-");
-                        String cardString = components[0];
-                        selectedPileIndex = Integer.parseInt(components[1]);
-                        selected = Optional.ofNullable(getCardFromList(currentHand.getCardList(), cardString));
-                        setStatusText("Selected: " + canonical(selected.get()) + ". Player" + nextPlayer +
-                                " select a pile " + selectedPileIndex + " to play the card.");
-                        playerMovementIndexes.set(nextPlayer, playerMovementIndex + 1);
-                        hasSelectedCard = true;
-                    }
+                Player currentPlayer = players.get(nextPlayer);
+                selected = currentPlayer.playAutoCard(currentPlay);
+                if (selected.isPresent()) {
+                    selectedPileIndex = currentPlayer.getAutoPileIndex();
+                    setStatusText("Selected: " + canonical(selected.get()) + ". Player" + nextPlayer +
+                            " select a pile " + selectedPileIndex + " to play the card.");
+                    hasSelectedCard = true;
                 }
             }
 

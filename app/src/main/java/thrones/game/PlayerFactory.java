@@ -132,6 +132,41 @@ public class PlayerFactory {
         return players;
     }
 
+    /**
+     * Loads auto-play movement data from properties into each Player's MoveData.
+     *
+     * Reads "plays.{playIndex}.players.{playerIndex}.cardsPlayed" for each play
+     * and player, parsing the comma-separated move strings (e.g. "7H-0,6C-0,7C-0")
+     * and storing them via Player.getMoveData().setMoves().
+     *
+     * This should be called after createAllPlayers() when isAuto is true,
+     * so that the auto-play information lives with each Player rather than
+     * in GameOfThrones' global lists.
+     *
+     * @param players    the list of Player objects to populate
+     * @param properties the game properties containing cardsPlayed entries
+     * @param nbPlays    the number of plays (rounds) in the game
+     */
+    public void loadAutoPlayMovements(List<Player> players, Properties properties, int nbPlays) {
+        for (Player player : players) {
+            int playerIndex = player.getPlayerIdentifier();
+            Player.MoveData moveData = player.getMoveData();
+
+            for (int playIndex = 0; playIndex < nbPlays; playIndex++) {
+                String key = "plays." + playIndex + ".players." + playerIndex + ".cardsPlayed";
+                String value = properties.getProperty(key);
+                if (value != null && !value.trim().isEmpty()) {
+                    List<String> moves = Arrays.asList(value.split(","));
+//                    List<String> moves = Arrays.stream(value.split(","))
+//                            .map(String::trim)
+//                            .filter(s -> !s.isEmpty())
+//                            .toList();
+                    moveData.setMoves(playIndex, moves);
+                }
+            }
+        }
+    }
+
     private LegalBotPlayer createLegalBot(int playerIndex, String considerationsStr) {
         List<String> considerationCodes = new ArrayList<>();
         if (considerationsStr != null && !considerationsStr.isEmpty()) {
@@ -143,7 +178,7 @@ public class PlayerFactory {
                 }
             }
         }
-        return new LegalBotPlayer(playerIndex, random, considerationCodes);
+        return new LegalBotPlayer(playerIndex, considerationCodes);
     }
 
     // ===================================================================
