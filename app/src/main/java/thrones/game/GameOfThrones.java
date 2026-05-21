@@ -37,10 +37,10 @@ public class GameOfThrones extends CardGame {
     static Random random = new Random(30006);
 
     private boolean isAuto = false;
-    public final int nbPlayers = 4;
+    private final int nbPlayers = 4;
     // Dealing constants moved to PlayerFactory
-    public final int nbPlays = 2;
-    public final int nbRounds = 3;
+    private final int nbPlays = 2;
+    private final int nbRounds = 3;
     private Deck deck = new Deck(Suit.values(), Rank.values(), "cover");
     private final Location[] handLocations = {
             new Location(350, 625),
@@ -78,7 +78,7 @@ public class GameOfThrones extends CardGame {
 
     private int nextStartingPlayer = random.nextInt(nbPlayers);
 
-    private int[] scores = new int[nbPlayers];
+    private Board board = new Board(nbPlayers);
     private Logger logger = new Logger();
 
     Font bigFont = new Font("Arial", Font.BOLD, 36);
@@ -167,9 +167,9 @@ public class GameOfThrones extends CardGame {
         }
 
         String text;
-        if (scores[0] > scores[1]) {
+        if (board.getScore(0) > board.getScore(1)) {
             text = "Players 0 and 2 won.";
-        } else if (scores[0] == scores[1]) {
+        } else if (board.getScore(0) == board.getScore(1)) {
             text = "All players drew.";
         } else {
             text = "Players 1 and 3 won.";
@@ -185,7 +185,6 @@ public class GameOfThrones extends CardGame {
 
     private void initScore() {
         for (int i = 0; i < nbPlayers; i++) {
-            scores[i] = 0;
             String text = "P" + i + "-0";
             scoreActors[i] = new TextActor(text, Color.WHITE, bgColor, bigFont);
             addActor(scoreActors[i], scoreLocations[i]);
@@ -200,7 +199,7 @@ public class GameOfThrones extends CardGame {
 
     private void updateScore(int player) {
         removeActor(scoreActors[player]);
-        String text = "P" + player + "-" + scores[player];
+        String text = "P" + player + "-" + board.getScore(player);
         scoreActors[player] = new TextActor(text, Color.WHITE, bgColor, bigFont);
         addActor(scoreActors[player], scoreLocations[player]);
     }
@@ -351,9 +350,8 @@ public class GameOfThrones extends CardGame {
     }
 
     private void updatePileRanks() {
-        for (int j = 0; j < piles.length; j++) {
-            int[] ranks = calculatePileRanks(j);
-            updatePileRankState(j, ranks[ATTACK_RANK_INDEX], ranks[DEFENCE_RANK_INDEX]);
+        for (int j = 0; j < 2; j++) {
+            updatePileRankState(j, board.getPileAttack(j), board.getPileDefence(j));
         }
     }
 
@@ -484,22 +482,22 @@ public class GameOfThrones extends CardGame {
         String character1Result;
 
         if (pileNorthRanks[ATTACK_RANK_INDEX] > pileSouthRanks[DEFENCE_RANK_INDEX]) {
-            scores[getPlayerIndex(nextStartingPlayer)] += pileSouthCharacterRank.getScoreValue();
-            scores[getPlayerIndex(nextStartingPlayer + 2)] += pileSouthCharacterRank.getScoreValue();
+            board.addScore(getPlayerIndex(nextStartingPlayer), pileSouthCharacterRank.getScoreValue());
+            board.addScore(getPlayerIndex(nextStartingPlayer + 2), pileSouthCharacterRank.getScoreValue());
             character0Result = "Character 0 attack on character 1 succeeded.";
         } else {
-            scores[getPlayerIndex(nextStartingPlayer + 1)] += pileSouthCharacterRank.getScoreValue();
-            scores[getPlayerIndex(nextStartingPlayer + 3)] += pileSouthCharacterRank.getScoreValue();
+            board.addScore(getPlayerIndex(nextStartingPlayer + 1), pileSouthCharacterRank.getScoreValue());
+            board.addScore(getPlayerIndex(nextStartingPlayer + 3), pileSouthCharacterRank.getScoreValue());
             character0Result = "Character 0 attack on character 1 failed.";
         }
 
         if (pileSouthRanks[ATTACK_RANK_INDEX] > pileNorthRanks[DEFENCE_RANK_INDEX]) {
-            scores[getPlayerIndex(nextStartingPlayer + 1)] += pileNorthCharacterRank.getScoreValue();
-            scores[getPlayerIndex(nextStartingPlayer + 3)] += pileNorthCharacterRank.getScoreValue();
+            board.addScore(getPlayerIndex(nextStartingPlayer + 1), pileNorthCharacterRank.getScoreValue());
+            board.addScore(getPlayerIndex(nextStartingPlayer + 3), pileNorthCharacterRank.getScoreValue());
             character1Result = "Character 1 attack on character 0 succeeded.";
         } else {
-            scores[getPlayerIndex(nextStartingPlayer)] += pileNorthCharacterRank.getScoreValue();
-            scores[getPlayerIndex(nextStartingPlayer + 2)] += pileNorthCharacterRank.getScoreValue();
+            board.addScore(getPlayerIndex(nextStartingPlayer), pileNorthCharacterRank.getScoreValue());
+            board.addScore(getPlayerIndex(nextStartingPlayer + 2), pileNorthCharacterRank.getScoreValue());
             character1Result = "Character 1 attack character 0 failed.";
         }
         updateScores();
@@ -524,7 +522,7 @@ public class GameOfThrones extends CardGame {
         int[] pileNorthRanks = calculatePileRanks(Pile.NORTH.ordinal());
         int[] pileSouthRanks = calculatePileRanks(Pile.SOUTH.ordinal());
         updateScoreForPlayers(pileNorthRanks, pileSouthRanks);
-        logger.logScores(pileNorthRanks, pileSouthRanks, scores);
+        logger.logScores(pileNorthRanks, pileSouthRanks, board.getScores());
 
         nextStartingPlayer += 1;
         currentPlay++;
