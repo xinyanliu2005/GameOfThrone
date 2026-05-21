@@ -21,6 +21,11 @@ public class Board implements PileInformation {
     public void executeAPlay(BotMove move) {
         int targetPile = move.getTargetPileIndex();
         move.getCard().transfer(piles[targetPile], true);
+        // Initialize the pile if it's null after the first card is played
+        if (piles[targetPile] == null) {
+            piles[targetPile] = new Hand(null);
+            piles[targetPile].insert(move.getCard(), true);
+        }
     }
     
 
