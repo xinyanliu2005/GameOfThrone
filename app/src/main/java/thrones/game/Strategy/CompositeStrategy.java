@@ -1,6 +1,7 @@
 package thrones.game.Strategy;
 
 import ch.aplu.jcardgame.Card;
+import thrones.game.BotMove;
 import thrones.game.PileInformation;
 import java.util.ArrayList;
 import java.util.List;

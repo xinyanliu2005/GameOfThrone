@@ -2,7 +2,6 @@ package thrones.game;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
-import thrones.game.Strategy.BotMove;
 
 import java.util.List;
 import java.util.Optional;

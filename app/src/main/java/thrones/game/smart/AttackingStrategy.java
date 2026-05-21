@@ -12,7 +12,10 @@ public class AttackingStrategy implements SelectionStrategy {
 
         List<Card> effectCards = hand.getCardList()
                 .stream()
-                .filter(card -> card.getSuit() == Suit.CLUBS || card.getSuit() == Suit.DIAMONDS)
+                .filter(card -> {
+                    Suit cardSuit = (Suit) card.getSuit();
+                    return cardSuit.isAttack() || cardSuit.isMagic();
+                })
                 .toList();
 
         Card cardWithLargestEffect = null;
@@ -22,7 +25,8 @@ public class AttackingStrategy implements SelectionStrategy {
         int targetedPileIndex = ownPileIndex;
 
         for (Card currentCard : effectCards) {
-            if (currentCard.getSuit() == Suit.CLUBS) {
+            Suit suit = (Suit) currentCard.getSuit();
+            if (suit.isAttack()) {
                 int attackChange = SelectionStrategy.attackDelta(currentCard, board, ownPileIndex);
 
                 if (attackChange > currentLargestEffect) {
@@ -30,7 +34,7 @@ public class AttackingStrategy implements SelectionStrategy {
                     cardWithLargestEffect = currentCard;
                     targetedPileIndex = ownPileIndex;
                 }
-            } else if (currentCard.getSuit() == Suit.DIAMONDS) {
+            } else if (suit.isMagic()) {
                 int defenceChange = -SelectionStrategy.defenceDelta(currentCard, board, 1 - ownPileIndex);
 
                 // always prefer diamond over club if == effect

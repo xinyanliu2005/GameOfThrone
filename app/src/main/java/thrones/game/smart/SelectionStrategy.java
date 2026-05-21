@@ -3,6 +3,7 @@ package thrones.game.smart;
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
 import thrones.game.AffectedCharacter;
+import thrones.game.BotMove;
 import thrones.game.CharacterBuilder;
 import thrones.game.PileInformation;
 

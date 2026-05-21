@@ -2,6 +2,7 @@ package thrones.game.smart;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
+import thrones.game.BotMove;
 import thrones.game.PileInformation;
 import thrones.game.Rank;
 import thrones.game.Suit;

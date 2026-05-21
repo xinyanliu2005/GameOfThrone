@@ -2,74 +2,66 @@ package thrones.game.smart;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
+import thrones.game.BotMove;
 import thrones.game.PileInformation;
-import thrones.game.Rank;
 import thrones.game.Suit;
 
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class MinimalPlayStrategy implements SelectionStrategy {
-    Random random;
-
-    public MinimalPlayStrategy() {
-        this.random = new Random();
-    }
-
-    //    TODO:
     public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
-        // Group cards by their rank
-        Map<Rank, List<Card>> cardsGroupedByRank = hand.getCardList()
-                .stream()
-                .collect(Collectors.groupingBy(
-                        card -> (Rank) card.getRank(),
-                        () -> new EnumMap<>(Rank.class),
-                        Collectors.toList()
-                ));
-
-        // predicate to check the group contains a heart card
-        Predicate<List<Card>> containsHeart = group -> group.stream().anyMatch(card -> card.getSuit() == Suit.HEARTS);
-
-        // size of the largest group containing a heart card
-        int maxSize = cardsGroupedByRank.values()
-                .stream()
-                .filter(containsHeart)
-                .mapToInt(List::size)
-                .max()
-                .orElse(0);
-
-        // all the groups that have a heart card and are the size of the largest group
-        List<Rank> largestGroups = cardsGroupedByRank.entrySet()
-                .stream()
-                .filter(entry -> containsHeart.test(entry.getValue()))
-                .filter(entry -> entry.getValue().size() == maxSize)
-                .map(Map.Entry::getKey)
-                .toList();
-
-        int highestScore = largestGroups
-                .stream()
-                .mapToInt(Rank::getScoreValue)
-                .max()
-                .orElse(0);
-
-        // find the group with the highest rank and all heart cards in that group
-        List<Card> winners = largestGroups
-                .stream()
-                .flatMap(rank -> cardsGroupedByRank.get(rank).stream())
-                .filter(card -> card.getSuit() == Suit.HEARTS)
-                .filter(card -> ((Rank) card.getRank()).getScoreValue() == highestScore)
-                .toList();
-
-        // realistically winners shouldn't be empty if being called in the correct place...
-        // player should always have a heart/character card...
-        if (winners.isEmpty()) return Optional.empty();
-
-        // choose random character card from remaining...could be more than one, as is based on their score value...
-        // e.g. [10H, KH]
-        Card chosenCharacter = winners.get(this.random.nextInt(winners.size()));
-
         int ownPileIndex = playerIdentifier % 2;
-        return Optional.of(new BotMove(chosenCharacter, ownPileIndex));
+        int oppositionPileIndex = 1 - ownPileIndex;
+
+        Card cardWithSmallestEffect = null;
+        int currentSmallestEffect = Integer.MAX_VALUE;
+        int targetedPileIndex = ownPileIndex;
+        int priority = Integer.MAX_VALUE;
+
+        final int DIAMOND_PRIORITY = 0;
+        final int CLUBS_PRIORITY = 1;
+        final int SPADES_PRIORITY = 2;
+
+        for (Card currentCard : hand.getCardList()) {
+            Suit suit = (Suit) currentCard.getSuit();
+            // not interested in character cards here
+            if (suit.isCharacter()) continue;
+
+            if (suit.isMagic()) {
+                int attackDrop = -SelectionStrategy.attackDelta(currentCard, board, oppositionPileIndex);
+                int defenceDrop = -SelectionStrategy.defenceDelta(currentCard, board, oppositionPileIndex);
+
+                // one of attackDrop or defenceDrop will be 0 (i.e. diamond only effects one of them)
+                int relevantChange = Math.max(attackDrop, defenceDrop);
+
+                if (relevantChange > 0 && (relevantChange < currentSmallestEffect || (relevantChange == currentSmallestEffect && DIAMOND_PRIORITY < priority))) {
+                    cardWithSmallestEffect = currentCard;
+                    priority = DIAMOND_PRIORITY;
+                    currentSmallestEffect = relevantChange;
+                    targetedPileIndex = oppositionPileIndex;
+                }
+            } else if (suit.isAttack()) {
+                int attackIncrease = SelectionStrategy.attackDelta(currentCard, board, ownPileIndex);
+                if (attackIncrease > 0 && (attackIncrease < currentSmallestEffect || (attackIncrease == currentSmallestEffect && CLUBS_PRIORITY < priority))) {
+                    cardWithSmallestEffect = currentCard;
+                    priority = CLUBS_PRIORITY;
+                    currentSmallestEffect = attackIncrease;
+                    targetedPileIndex = ownPileIndex;
+                }
+            } else if (suit.isDefence()) {
+                int defenceIncrease = SelectionStrategy.defenceDelta(currentCard, board, ownPileIndex);
+
+                if (defenceIncrease > 0 && defenceIncrease < currentSmallestEffect) {
+                    currentSmallestEffect = defenceIncrease;
+                    priority = SPADES_PRIORITY;
+                    cardWithSmallestEffect = currentCard;
+                    targetedPileIndex = ownPileIndex;
+                }
+            }
+        }
+
+        if (cardWithSmallestEffect == null) return Optional.empty();
+
+        return Optional.of(new BotMove(cardWithSmallestEffect, targetedPileIndex));
     }
 }

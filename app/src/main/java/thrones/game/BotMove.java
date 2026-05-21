@@ -1,4 +1,4 @@
-package thrones.game.smart;
+package thrones.game;
 
 import ch.aplu.jcardgame.Card;
 
