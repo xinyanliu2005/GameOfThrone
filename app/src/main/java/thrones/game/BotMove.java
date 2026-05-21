@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:app/src/main/java/thrones/game/BotMove.java
 package thrones.game;
-========
-package thrones.game.strategy;
->>>>>>>> main:app/src/main/java/thrones/game/strategy/BotMove.java
 
 import ch.aplu.jcardgame.Card;
 

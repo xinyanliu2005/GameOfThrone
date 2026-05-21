@@ -2,10 +2,10 @@ package thrones.game.smart;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
-import thrones.game.AffectedCharacter;
 import thrones.game.BotMove;
-import thrones.game.CharacterBuilder;
 import thrones.game.PileInformation;
+import thrones.game.effectCard.AffectedCharacter;
+import thrones.game.effectCard.CharacterBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
