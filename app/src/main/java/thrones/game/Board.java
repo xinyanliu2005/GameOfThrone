@@ -2,58 +2,59 @@ package thrones.game;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
+import thrones.game.Strategy.BotMove;
 
 import java.util.List;
 import java.util.Optional;
 
 public class Board implements PileInformation {
 
+    private final int NORTH = 0;
+    private final int SOUTH = 1;
     private final Hand[] piles = new Hand[2];
-    private final List<Player> players;
     private final int[] scores;
 
-    // Optional: Pass an Observer here if you want the Board to notify GameOfThrones to redraw UI
-    public Board(List<Player> players) {
-        this.players = players;
-        this.scores = new int[players.size()];
+    public Board(int playerSize) {
+        this.scores = new int[playerSize];
     }
 
-
-    
-    public void executeAPlay(int startingPlayerIndex) {
-        // 1. Initial Heart Phase
-        playHeartForCharacters(startingPlayerIndex);
-        
-        // 2. Main Turns Phase
-        playTurns(startingPlayerIndex);
-        
-        // 3. Resolve Round and Update Scores
-        updateScoreForPlayers();
+    public void executeAPlay(BotMove move) {
+        int targetPile = move.getTargetPileIndex();
+        move.getCard().transfer(piles[targetPile], true);
     }
     
-    private void playHeartForCharacters(int startingPlayerIndex) {
-        // Example logic:
-        // Player currentPlayer = players.get(index);
-        // Optional<Card> card = currentPlayer.selectCardToPlay(this, true); // true = isCharacterRound
-        // int pileIndex = currentPlayer.choosePileToPlayOn();
-        // card.get().transfer(piles[pileIndex], true);
-    }
-    
-    private void playTurns(int startingPlayerIndex) {
-        // Example logic: Loop over players for the remaining turns
-        // Optional<Card> card = currentPlayer.selectCardToPlay(this, false); // false = not character round
+
+    public void executeFight() {
+        int northAttack = getPileAttack(NORTH);
+        int northDefence = getPileDefence(NORTH);
+
+        int southAttack = getPileAttack(SOUTH);
+        int southDefence = getPileDefence(SOUTH);
+
+        // North attacks South
+        if (northAttack > southDefence) {
+            // North wins attack, gets South's heart value
+            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+        } else {
+            // South wins defense, gets North's heart value
+            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+        }
+
+        // South attacks North
+        if (southAttack > northDefence) {
+            // South wins attack, gets North's heart value
+            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+        } else {
+            // North wins defense, gets South's heart value
+            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+        }
     }
 
-    private void updateScoreForPlayers() {
-        // Calculate the attack and defence from piles
-        // Determine the winners for this play
-        // Update this.scores 
-        // Notify UI to update if necessary
+    private void updateScore(int targetPile, int score) {
+        if (targetPile >= 0 && targetPile < scores.length) {
+            scores[targetPile] += score;
+        }
     }
-
-    // ==========================================
-    // PileInformation (Facade/Read-Only) Methods
-    // ==========================================
 
     @Override
     public int getPileAttack(int pileIndex) {
@@ -84,9 +85,9 @@ public class Board implements PileInformation {
     }
 
     @Override
-    public int getPlayerScore(int playerIndex) {
-        if (playerIndex >= 0 && playerIndex < scores.length) {
-            return scores[playerIndex];
+    public int getScore(int pileIndex) {
+        if (pileIndex >= 0 && pileIndex < scores.length) {
+            return scores[pileIndex];
         }
         return 0;
     }

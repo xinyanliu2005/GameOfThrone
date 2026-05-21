@@ -34,8 +34,7 @@ public class LegalBotPlayer extends Player {
         // By checking score to see which turn we are
         int currentPlayIndex = 0;
         if (currentBoard != null) {
-            int combinedScore = currentBoard.getPlayerScore(0) + currentBoard.getPlayerScore(1)
-                    + currentBoard.getPlayerScore(2) + currentBoard.getPlayerScore(3);
+            int combinedScore = currentBoard.getScore(0) * 2 + currentBoard.getScore(1) * 2;
             if (combinedScore > 0) {
                 currentPlayIndex = 1;
             }
