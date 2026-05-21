@@ -267,7 +267,7 @@ public class GameOfThrones extends CardGame {
 
     private void resetIndexes() {
         for (Player player : players) {
-            player.getMoveData().resetIndex();
+            player.resetMovementIndex();
         }
     }
 

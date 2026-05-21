@@ -1,4 +1,4 @@
-package thrones.game.Strategy;
+package thrones.game.strategy;
 
 import ch.aplu.jcardgame.Card;
 import thrones.game.PileInformation;

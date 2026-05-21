@@ -1,7 +1,7 @@
-package thrones.game.Strategy;
+package thrones.game.strategy;
 import ch.aplu.jcardgame.Card;
 import thrones.game.PileInformation;
-import java.util.List;
+
 import java.util.Optional;
 
 public interface BotStrategy {

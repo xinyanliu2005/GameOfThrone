@@ -1,6 +1,6 @@
 package thrones.game;
 
-import thrones.game.Strategy.*;
+import thrones.game.strategy.*;
 import ch.aplu.jcardgame.Card;
 import java.util.ArrayList;
 import java.util.List;
