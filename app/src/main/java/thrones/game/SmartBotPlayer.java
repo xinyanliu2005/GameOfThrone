@@ -1,34 +1,61 @@
 package thrones.game;
 
 import ch.aplu.jcardgame.Card;
+import thrones.game.smart.*;
+
 import java.util.Optional;
 
 public class SmartBotPlayer extends Player {
-    private final int NORTH = 0;
-    private final int SOUTH = 1;
-    private int pileIndex;
+    private final SelectionStrategy characterStrategy = new CharacterSelectionStrategy();
+    private final SelectionStrategy attackingStrategy = new AttackingStrategy();
+    private final SelectionStrategy defendingStrategy = new DefendingStrategy();
+    private final SelectionStrategy minimalPlayStrategy = new MinimalPlayStrategy();
+
+
+
+    private boolean justPassed = false;
+    private int pendingPileIndex = -1;
+    private int lastSeenPlayIndex = -1;
+
     public SmartBotPlayer(int playerIdentifier) {
         super(playerIdentifier);
-
-        if (playerIdentifier % 2 == 0) pileIndex = NORTH;
-        else pileIndex = SOUTH;
     }
 
     @Override
     public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
-        // TODO: Implement your evaluation function or search algorithm here.
-        // Evaluate the valid cards in getPlayerHand().getCardList() against
-        // the current state of the game board to find the optimal play.
+        if (currentBoard.getPlayIndex() != lastSeenPlayIndex) {
+            justPassed = false;
+            lastSeenPlayIndex = currentBoard.getPlayIndex();
+        }
 
-        return Optional.empty(); // Placeholder to be replaced by your logic
+        SelectionStrategy chosenStrategy = pickStrategy(currentBoard, isCharacterRound);
+        Optional<BotMove> move = chosenStrategy.selectMove(getPlayerHand(), currentBoard, getPlayerIdentifier());
+
+        if (move.isEmpty()) {
+            justPassed = true;
+            pendingPileIndex = -1;
+            return Optional.empty();
+        }
+
+        if (chosenStrategy == minimalPlayStrategy) justPassed = false;
+        pendingPileIndex = move.get().getTargetPileIndex();
+        return Optional.of(move.get().getCard());
+    }
+
+    private SelectionStrategy pickStrategy(PileInformation currentBoard, boolean isCharacterRound) {
+        if (isCharacterRound) return characterStrategy;
+        if (justPassed) return minimalPlayStrategy;
+        int playersAttack = currentBoard.getPileAttack(getPlayerIdentifier() % 2);
+        int oppositionsDefence = currentBoard.getPileDefence(1 - getPlayerIdentifier() % 2);
+
+        return playersAttack <= oppositionsDefence ? attackingStrategy : defendingStrategy;
+
     }
 
     @Override
     public int choosePileToPlayOn() {
-        // TODO: Implement logic to determine the most advantageous pile.
-        // This should score the impact of placing the previously selected
-        // card on Pile.NORTH versus Pile.SOUTH to maximize points.
-
-        return 0; // Placeholder to be replaced by your logic
+        int pile = pendingPileIndex;
+        pendingPileIndex = -1;
+        return pile;
     }
 }
