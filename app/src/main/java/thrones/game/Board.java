@@ -47,48 +47,50 @@ public class Board implements PileInformation {
         move.getCard().transfer(piles[targetPile], true);
     }
     
-
-    public void executeFight() {
+    public FightResult executeFight() {
         int northAttack = getPileAttack(NORTH);
         int northDefence = getPileDefence(NORTH);
 
         int southAttack = getPileAttack(SOUTH);
         int southDefence = getPileDefence(SOUTH);
 
+        boolean northAttackSucceeded;
+        boolean southAttackSucceeded;
+
         // North attacks South
-//        if (northAttack > southDefence) {
-//            // North wins attack, gets South's heart value
-//            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
-//        } else {
-//            // South wins defense, gets North's heart value
-//            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
-//        }
-//
-//        // South attacks North
-//        if (southAttack > northDefence) {
-//            // South wins attack, gets North's heart value
-//            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
-//        } else {
-//            // North wins defense, gets South's heart value
-//            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
-//        }
+        if (northAttack > southDefence) {
+            // North wins attack, gets South's heart value
+            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+            northAttackSucceeded = true;
+        } else {
+            // South wins defense, gets North's heart value
+            updateScore(SOUTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+            northAttackSucceeded = false;
+        }
+
+        // South attacks North
+        if (southAttack > northDefence) {
+            // South wins attack, gets North's heart value
+            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+            southAttackSucceeded = true;
+        } else {
+            // North wins defense, gets South's heart value
+            updateScore(NORTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+            southAttackSucceeded = false;
+        }
 
         playIndex++;
+
+        return new FightResult(northAttackSucceeded, southAttackSucceeded);
     }
 
-    /** Update  score for initialisation */
-    public void addScore(int playerIndex, int score) {
-        if (playerIndex >= 0 && playerIndex < scores.length) {
-            scores[playerIndex] += score;
+    /* Automatically update score after each play's fight */
+    private void updateScore(int targetPile, int score) {
+        if (targetPile >= 0 && targetPile < scores.length / 2) {
+            scores[targetPile] += score;
+            scores[targetPile + 2] += score;
         }
     }
-
-//    /* Automatically update score after each play's fight */
-//    private void updateScore(int targetPile, int score) {
-//        if (targetPile >= 0 && targetPile < scores.length) {
-//            scores[targetPile] += score;
-//        }
-//    }
 
     @Override
     public int getPileAttack(int pileIndex) {
