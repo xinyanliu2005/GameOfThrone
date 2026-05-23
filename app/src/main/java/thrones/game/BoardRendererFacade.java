@@ -5,6 +5,11 @@ import ch.aplu.jgamegrid.*;
 
 import java.awt.*;
 
+/**
+ * Facade over the JGameGrid rendering API for the score labels and pile-status text on the game board
+ *
+ * extracted from GameOfThrones to reduce responsibilities of GameOfThrones
+ */
 public class BoardRendererFacade {
     private final CardGame game;
     private final Color bgColor;

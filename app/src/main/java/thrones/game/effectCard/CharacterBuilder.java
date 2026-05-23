@@ -7,8 +7,17 @@ import thrones.game.Suit;
 import java.util.List;
 import java.util.Optional;
 
-// Builder design pattern for building and adding effects to a Character
+/**
+ * Builder for constructing the AffectedCharacter decorator chain from a list (i.e. pile) of cards in play order
+ */
 public final class CharacterBuilder {
+
+    /**
+     * Add a card to the AffectedCharacter
+     * @param character AffectedCharacter to which to add the provided card
+     * @param card Card to be added to the AffectedCharacter
+     * @return the updated AffectedCharacter
+     */
     public static AffectedCharacter addCard(AffectedCharacter character, Card card) {
         Suit suit = (Suit)card.getSuit();
         Rank rank = (Rank)card.getRank();
@@ -21,6 +30,11 @@ public final class CharacterBuilder {
         };
     }
 
+    /**
+     * Given an ordered list (i.e. pile) of cards, create an AffectedCharacter from them
+     * @param cards list of cards in order of which they should be applied in building a character (Hearts first)
+     * @return Optionally return an Affected Character
+     */
     public static Optional<AffectedCharacter> fromCards(List<Card> cards) {
         if (cards == null || cards.isEmpty()) {
             return Optional.empty();

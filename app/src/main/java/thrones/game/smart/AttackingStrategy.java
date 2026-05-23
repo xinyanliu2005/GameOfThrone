@@ -6,10 +6,23 @@ import thrones.game.*;
 
 import java.util.*;
 
+/**
+ * Concrete strategy for attacking mode. Picks the move that creates the largest effect by either increasing
+ * the bot's team attack, or decreasing the opponent's defence
+ */
 public class AttackingStrategy implements SelectionStrategy {
 
+    /**
+     * Finds the move that will result in the largest effect by either increasing the bots teams attack (placing a
+     * Club card on their character pile), or decreasing the oppositions defence (placing a diamond on the opposition pile)
+     * @param hand the players hand (i.e. to access all the cards they have)
+     * @param board current state of the board
+     * @param playerIdentifier index of the player
+     * @return a possible BotMove, indicating the move that the player made
+     */
     public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
 
+        // create list of relevant cards (i.e. attack and magic cards)
         List<Card> effectCards = hand.getCardList()
                 .stream()
                 .filter(card -> {
@@ -29,6 +42,7 @@ public class AttackingStrategy implements SelectionStrategy {
             if (suit.isAttack()) {
                 int attackChange = SelectionStrategy.attackDelta(currentCard, board, ownPileIndex);
 
+                // if the effect is larger the previous largest effect, update largest effect, related card, and targeted pile
                 if (attackChange > currentLargestEffect) {
                     currentLargestEffect = attackChange;
                     cardWithLargestEffect = currentCard;
@@ -37,7 +51,8 @@ public class AttackingStrategy implements SelectionStrategy {
             } else if (suit.isMagic()) {
                 int defenceChange = -SelectionStrategy.defenceDelta(currentCard, board, 1 - ownPileIndex);
 
-                // always prefer diamond over club if == effect
+                // if the effect is larger the previous largest effect, update largest effect, related card, and targeted pile
+                // always prefer diamond over club if the effects are the same
                 if (defenceChange > 0 && defenceChange >= currentLargestEffect) {
                     currentLargestEffect = defenceChange;
                     cardWithLargestEffect = currentCard;
