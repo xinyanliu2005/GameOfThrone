@@ -20,10 +20,6 @@ public class LegalBotPlayer extends Player {
         coreStrategy = buildStrategy(this.considerationCodes);
     }
 
-    public List<String> getConsiderationCodes() {
-        return considerationCodes;
-    }
-
     @Override
     public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         List<Card> validPlayableCards = getValidCards(isCharacterRound);
