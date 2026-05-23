@@ -1,14 +1,7 @@
 package thrones.game;
 
-// Utility class for displaying fight results
-public class FightResult {
-    private final boolean northAttackSucceeded;
-    private final boolean southAttackSucceeded;
-
-    public FightResult (boolean northAttackSucceeded, boolean southAttackSucceeded) {
-        this.northAttackSucceeded = northAttackSucceeded;
-        this.southAttackSucceeded = southAttackSucceeded;
-    }
+// Record for displaying fight results
+public record FightResult(boolean northAttackSucceeded, boolean southAttackSucceeded){
 
     public String northResultMessage() {
        return northAttackSucceeded ? "Character 0 attack on character 1 succeeded." : "Character 0 attack on character 1 failed.";
