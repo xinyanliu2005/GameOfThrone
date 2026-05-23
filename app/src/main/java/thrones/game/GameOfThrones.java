@@ -251,9 +251,6 @@ public class GameOfThrones extends CardGame {
         boardRenderer.updatePileRanks(board);
     }
 
-    // pickACorrectSuit and selectRandomPile removed — replaced by
-    // Player.selectCardToPlay() and Player.choosePileToPlayOn() polymorphic dispatch
-
     private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
         Player currentPlayer = players.get(playerIndex);
         if (currentPlayer.getPlayerHand().isEmpty()) {
