@@ -1,6 +1,7 @@
 package thrones.game;
 
 import ch.aplu.jcardgame.Card;
+import ch.aplu.jcardgame.Deck;
 import ch.aplu.jcardgame.Hand;
 import thrones.game.effectCard.AffectedCharacter;
 import thrones.game.effectCard.CharacterBuilder;
@@ -16,8 +17,20 @@ public class Board implements PileInformation {
     private final int[] scores;
     private int playIndex = 0;
 
-    public Board(int playerSize) {
+    public Board(int playerSize, Deck deck) {
         this.scores = new int[playerSize];
+        piles[0] = new Hand(deck);
+        piles[1] = new Hand(deck);
+    }
+
+    public void resetPiles() {
+        for (Hand pile : piles) {
+            pile.removeAll(true);
+        }
+    }
+
+    public Hand[] getPiles() {
+        return piles;
     }
 
     public void setPlayIndex(int playIndex) {
@@ -32,45 +45,50 @@ public class Board implements PileInformation {
     public void executeAPlay(BotMove move) {
         int targetPile = move.getTargetPileIndex();
         move.getCard().transfer(piles[targetPile], true);
-        // Initialize the pile if it's null after the first card is played
-        if (piles[targetPile] == null) {
-            piles[targetPile] = new Hand(null);
-            move.getCard().transfer(piles[targetPile], true);
-        }
     }
     
-
-    public void executeFight() {
+    public FightResult executeFight() {
         int northAttack = getPileAttack(NORTH);
         int northDefence = getPileDefence(NORTH);
 
         int southAttack = getPileAttack(SOUTH);
         int southDefence = getPileDefence(SOUTH);
 
+        boolean northAttackSucceeded;
+        boolean southAttackSucceeded;
+
         // North attacks South
         if (northAttack > southDefence) {
             // North wins attack, gets South's heart value
             updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+            northAttackSucceeded = true;
         } else {
             // South wins defense, gets North's heart value
-            updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+            updateScore(SOUTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+            northAttackSucceeded = false;
         }
 
         // South attacks North
         if (southAttack > northDefence) {
             // South wins attack, gets North's heart value
             updateScore(SOUTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+            southAttackSucceeded = true;
         } else {
             // North wins defense, gets South's heart value
-            updateScore(NORTH, ((Rank) piles[SOUTH].get(0).getRank()).getScoreValue());
+            updateScore(NORTH, ((Rank) piles[NORTH].get(0).getRank()).getScoreValue());
+            southAttackSucceeded = false;
         }
 
         playIndex++;
+
+        return new FightResult(northAttackSucceeded, southAttackSucceeded);
     }
 
+    /* Automatically update score after each play's fight */
     private void updateScore(int targetPile, int score) {
-        if (targetPile >= 0 && targetPile < scores.length) {
+        if (targetPile >= 0 && targetPile < scores.length / 2) {
             scores[targetPile] += score;
+            scores[targetPile + 2] += score;
         }
     }
 
@@ -108,5 +126,9 @@ public class Board implements PileInformation {
             return scores[pileIndex];
         }
         return 0;
+    }
+
+    public int[] getScores() {
+        return scores;
     }
 }

@@ -20,10 +20,6 @@ public class LegalBotPlayer extends Player {
         coreStrategy = buildStrategy(this.considerationCodes);
     }
 
-    public List<String> getConsiderationCodes() {
-        return considerationCodes;
-    }
-
     @Override
     public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         List<Card> validPlayableCards = getValidCards(isCharacterRound);
@@ -51,7 +47,8 @@ public class LegalBotPlayer extends Player {
         Optional<BotMove> validatedMove = coreStrategy.determineMove(selectedCard, autoCandidatePileIndex,
                 currentBoard, getPlayerIdentifier());
 
-        if (validatedMove.isPresent()) {
+        // Check whether the move is validated by strategy, also won't break game rule
+        if (validatedMove.isPresent() && isMoveValid(selectedCard, autoCandidatePileIndex, currentBoard)) {
             this.pendingPileIndex = validatedMove.get().getTargetPileIndex();
             return Optional.of(selectedCard);
         }

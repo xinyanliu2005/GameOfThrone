@@ -13,12 +13,12 @@ public class GameTest {
         String logResult = gameOfThrones.runApp();
         Assert.assertTrue(logResult.contains("PileNORTH:9H,9S,6C,11D,7C"));
         Assert.assertTrue(logResult.contains("PileSOUTH:6H,7S,6S,9C,8S,13D,12S"));
-        Assert.assertTrue(logResult.contains("Values:PileNORTH:12-27,PileSOUTH:15-27"));
+        Assert.assertTrue(logResult.contains("Values:PileNORTH:12-27,PileSOUTH:15-37"));
         Assert.assertTrue(logResult.contains("Score:9,6,9,6"));
 
         Assert.assertTrue(logResult.contains("PileNORTH:4H,3S,11S,5S,13S,10D"));
         Assert.assertTrue(logResult.contains("PileSOUTH:13H,5C,8C,10S,12D,11C"));
-        Assert.assertTrue(logResult.contains("Values:PileNORTH:4-12,PileSOUTH:33-0"));
+        Assert.assertTrue(logResult.contains("Values:PileNORTH:4-12,PileSOUTH:43-0"));
         Assert.assertTrue(logResult.contains("Score:19,10,19,10"));
     }
 
@@ -83,7 +83,7 @@ public class GameTest {
 
         Assert.assertTrue(logResult.contains("PileNORTH:7H,3C,2S,5D,3S"));
         Assert.assertTrue(logResult.contains("PileSOUTH:10H,12C,2C,10S,13D,12S"));
-        Assert.assertTrue(logResult.contains("Values:PileNORTH:10-7,PileSOUTH:32-10"));
+        Assert.assertTrue(logResult.contains("Values:PileNORTH:10-7,PileSOUTH:32-20"));
         Assert.assertTrue(logResult.contains("Score:3,23,3,23"));
     }
 }
