@@ -8,9 +8,23 @@ import thrones.game.Suit;
 
 import java.util.*;
 
+/**
+ * Concrete strategy for defending mode. Picks the move that creates the largest effect by either increasing
+ * the bot's team defence, or decreasing the opponent's attack
+ */
 public class DefendingStrategy implements SelectionStrategy {
+
+    /**
+     * Finds the move that will result in the largest effect by either increasing the bots teams defence (placing a
+     * Spade card on their character pile), or decreasing the oppositions attack (placing a diamond on the opposition pile)
+     * @param hand the players hand (i.e. to access all the cards they have)
+     * @param board current state of the board
+     * @param playerIdentifier index of the player
+     * @return a possible BotMove, indicating the move that the player made
+     */
     public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
 
+        // create list of relevant cards (i.e. defence and magic cards)
         List<Card> effectCards = hand.getCardList()
                 .stream()
                 .filter(card -> {
@@ -30,6 +44,7 @@ public class DefendingStrategy implements SelectionStrategy {
             if (suit.isDefence()) {
                 int defenceChange = SelectionStrategy.defenceDelta(currentCard, board, ownPileIndex);
 
+                // if the effect is larger the previous largest effect, update largest effect, related card, and targeted pile
                 if (defenceChange > currentLargestEffect) {
                     currentLargestEffect = defenceChange;
                     cardWithLargestEffect = currentCard;
@@ -38,6 +53,7 @@ public class DefendingStrategy implements SelectionStrategy {
             } else if (suit.isMagic()) {
                 int attackChange = -SelectionStrategy.attackDelta(currentCard, board, 1 - ownPileIndex);
 
+                // if the effect is larger the previous largest effect, update largest effect, related card, and targeted pile
                 // always prefer diamond over spade if == effect
                 if (attackChange > 0 && attackChange >= currentLargestEffect) {
                     currentLargestEffect = attackChange;

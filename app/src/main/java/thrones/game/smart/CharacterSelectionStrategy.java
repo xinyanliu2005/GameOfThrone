@@ -11,6 +11,10 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * Concrete strategy for the character selection round. Picks the smart bot's character card to
+ * maximise likelihood of getting double effect cards during play
+ */
 public class CharacterSelectionStrategy implements SelectionStrategy {
     Random random;
 
@@ -18,6 +22,14 @@ public class CharacterSelectionStrategy implements SelectionStrategy {
         this.random = new Random();
     }
 
+    /**
+     * Finds the heart card that shares its rank with the highest number of effect cards (to maximise double effect opportunities)
+     * tie breaking on heart card with the highest score value
+     * @param hand the players hand (i.e. to access all the cards they have)
+     * @param board current state of the board
+     * @param playerIdentifier index of the player
+     * @return a possible BotMove, indicating the move that the player made
+     */
     public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
         // Group cards by their rank
         Map<Rank, List<Card>> cardsGroupedByRank = hand.getCardList()

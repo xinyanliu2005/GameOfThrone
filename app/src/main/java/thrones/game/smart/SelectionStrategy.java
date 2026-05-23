@@ -11,9 +11,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Strategy interface to be used by SmartBotPlayer
+ * Each concrete strategy encapsulates the algorithm for one of the different
+ * decision mode for the SmartBotPlayer
+ */
 public interface SelectionStrategy {
     Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier);
 
+    /**
+     * Static helper to compute the attack changes for a proposed move by
+     * creating a temporary CharacterBuilder chain
+     * All 4 concrete strategies use this to evaluate potential moves
+     * @param card - proposed card to be added to the Character/pile
+     * @param board - the current board state
+     * @param pileIndex - pile that the proposed chard is to be played upon
+     * @return the change in the pile attack if the given card were played on the given pile
+     */
     static int attackDelta(Card card, PileInformation board, int pileIndex) {
         List<Card> pileBefore = board.getPileCards(pileIndex);
         List<Card> pileAfter = new ArrayList<>(pileBefore);
@@ -25,6 +39,15 @@ public interface SelectionStrategy {
         return newAttack - oldAttack;
     }
 
+    /**
+     * Static helper to compute the defence changes for a proposed move by
+     * creating a temporary CharacterBuilder chain
+     * All 4 concrete strategies use this to evaluate potential moves
+     * @param card - proposed card to be added to the Character/pile
+     * @param board - the current board state
+     * @param pileIndex - pile that the proposed chard is to be played upon
+     * @return the change in the pile defence if the given card were played on the given pile
+     */
     static int defenceDelta(Card card, PileInformation board, int pileIndex) {
         List<Card> pileBefore = board.getPileCards(pileIndex);
         List<Card> pileAfter = new ArrayList<>(pileBefore);

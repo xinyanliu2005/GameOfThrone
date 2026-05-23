@@ -1,6 +1,7 @@
 package thrones.game;
 
-// Record for displaying fight results
+//Record for displaying fight results
+
 public record FightResult(boolean northAttackSucceeded, boolean southAttackSucceeded){
 
     public String northResultMessage() {
