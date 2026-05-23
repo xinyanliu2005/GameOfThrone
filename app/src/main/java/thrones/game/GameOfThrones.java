@@ -365,7 +365,7 @@ public class GameOfThrones extends CardGame {
 
         while(remainingTurns > 0) {
             boolean hasSelectedCard = false;
-            if (isAuto) {
+            if (isAuto && isHumanPlayer(nextPlayer)) {
                 Player currentPlayer = players.get(nextPlayer);
                 selected = currentPlayer.playAutoCard(currentPlay);
                 if (selected.isPresent()) {

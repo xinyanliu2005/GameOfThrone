@@ -3,6 +3,8 @@ package thrones.game.strategy;
 import ch.aplu.jcardgame.Card;
 import thrones.game.BotMove;
 import thrones.game.PileInformation;
+import thrones.game.Suit;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
