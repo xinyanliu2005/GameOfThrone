@@ -42,11 +42,8 @@ public class Board implements PileInformation {
         return playIndex;
     }
 
-    public void executeAPlay(BotMove move) {
-        int targetPile = move.getTargetPileIndex();
-        move.getCard().transfer(piles[targetPile], true);
-    }
-    
+    /** Carry out the fight
+     * @return FightResult Contains information of whether each team successfully attack enemy team */
     public FightResult executeFight() {
         int northAttack = getPileAttack(NORTH);
         int northDefence = getPileDefence(NORTH);

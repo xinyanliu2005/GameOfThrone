@@ -53,10 +53,6 @@ public class GameOfThrones extends CardGame {
             new Location(350, 430)
     };
 
-    // ====================================================================
-    // Players created via PlayerFactory (Singleton + Factory Method pattern)
-    // Replaces the old PlayerType enum and manual if/else instantiation.
-    // ====================================================================
     private List<Player> players;
 
     private final int watchingTime = 5000;
@@ -87,12 +83,7 @@ public class GameOfThrones extends CardGame {
     private void initWithProperties(Properties properties) {
         isAuto = Boolean.parseBoolean(properties.getProperty("isAuto"));
 
-        // ---------------------------------------------------------------
-        // Use PlayerFactory (Singleton) to create all Player instances.
-        // The factory parses config strings like "human", "random",
-        // "legal-oa,td,tm", "smart" and returns the correct subclass.
-        // ---------------------------------------------------------------
-        PlayerFactory.reset();  // Reset in case of multiple games (testing)
+        PlayerFactory.reset();  // Reset in case of multiple games
         PlayerFactory factory = PlayerFactory.init(random);
         players = factory.createAllPlayers(properties, nbPlayers);
 
@@ -149,6 +140,7 @@ public class GameOfThrones extends CardGame {
         setupGame();
     }
 
+    /** Run the game number of plays before the settlement */
     public String runApp() {
         while(currentPlay < nbPlays) {
             executeAPlay();
@@ -171,7 +163,6 @@ public class GameOfThrones extends CardGame {
         return logger.getAllLog();
     }
 
-    // Card dealing and card lookup are now handled by PlayerFactory and Player.MoveData
 
     private Optional<Card> selected;
     private final int NON_SELECTION_VALUE = -1;
@@ -179,6 +170,7 @@ public class GameOfThrones extends CardGame {
     private final int UNDEFINED_INDEX = -1;
     public static final int ATTACK_RANK_INDEX = 0;
     public static final int DEFENCE_RANK_INDEX = 1;
+    /** Assign the hands to each player */
     private void setupGame() {
         // Use PlayerFactory (Singleton) to create hands and deal cards
         PlayerFactory factory = PlayerFactory.getInstance();
@@ -225,12 +217,14 @@ public class GameOfThrones extends CardGame {
         // End graphics
     }
 
+    /* Reset each player's movement index for auto play in a new Play*/
     private void resetIndexes() {
         for (Player player : players) {
             player.resetMovementIndex();
         }
     }
 
+    /* Clear the pile graphic */
     private void resetPile() {
         board.resetPiles();
         Hand[] boardPiles = board.getPiles();
@@ -251,6 +245,7 @@ public class GameOfThrones extends CardGame {
         boardRenderer.updatePileRanks(board);
     }
 
+    /* Forbidden player select invalid type of card */
     private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
         Player currentPlayer = players.get(playerIndex);
         if (currentPlayer.getPlayerHand().isEmpty()) {
@@ -276,6 +271,7 @@ public class GameOfThrones extends CardGame {
         }
     }
 
+    /* Wait for human player to select its target pile */
     private void waitForPileSelection() {
         selectedPileIndex = NON_SELECTION_VALUE;
         for (Hand pile : board.getPiles()) {
@@ -301,6 +297,7 @@ public class GameOfThrones extends CardGame {
         return players.get(playerIndex) instanceof HumanPlayer;
     }
 
+    /* Play Heart card for the first round */
     private void playHeartForCharacters() {
         // 1: play the first 2 hearts
         nextStartingPlayer = -1;
@@ -355,6 +352,7 @@ public class GameOfThrones extends CardGame {
         }
     }
 
+    /* Play non-Heart cards for the remaining rounds */
     private void playTurns() {
         // 2: play the remaining nbPlayers * nbRounds - 2
         int remainingTurns = nbPlayers * nbRounds - 2;
@@ -409,6 +407,7 @@ public class GameOfThrones extends CardGame {
         }
     }
 
+    /* Update score and logger after a fight */
     private void displayFightResult(int[] pileNorthRanks, int[] pileSouthRanks) {
         System.out.println("pile north: " + canonical(board.getPiles()[Pile.NORTH.ordinal()]));
         System.out.println("pile north is " + "Attack: " + pileNorthRanks[ATTACK_RANK_INDEX] + " - Defence: " + pileNorthRanks[DEFENCE_RANK_INDEX]);
@@ -422,6 +421,7 @@ public class GameOfThrones extends CardGame {
         setStatusText(fightResult.northResultMessage() + " " + fightResult.southResultMessage());
     }
 
+    /* Run a play and update the score and logger */
     private void executeAPlay() {
         resetPile();
         resetIndexes();
@@ -443,13 +443,5 @@ public class GameOfThrones extends CardGame {
         nextStartingPlayer += 1;
         currentPlay++;
         delay(watchingTime);
-    }
-
-    private int getWatchingTime() {
-        if (isAuto) {
-            return 100;
-        } else {
-            return 500;
-        }
     }
 }
