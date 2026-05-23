@@ -47,7 +47,7 @@ public class LegalBotPlayer extends Player {
         Optional<BotMove> validatedMove = coreStrategy.determineMove(selectedCard, autoCandidatePileIndex,
                 currentBoard, getPlayerIdentifier());
 
-        if (validatedMove.isPresent()) {
+        if (validatedMove.isPresent() && isMoveValid(selectedCard, autoCandidatePileIndex, currentBoard)) {
             this.pendingPileIndex = validatedMove.get().getTargetPileIndex();
             return Optional.of(selectedCard);
         }

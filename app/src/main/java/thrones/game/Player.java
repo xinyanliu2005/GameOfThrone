@@ -149,4 +149,14 @@ public abstract class Player {
      * @return The integer index of the selected pile.
      */
     public abstract int choosePileToPlayOn();
+
+    public boolean isMoveValid(Card card, int pileIndex, PileInformation board) {
+        if (card.getSuit() == Suit.DIAMONDS) {
+            Optional<Card> lastCard = board.getLastPlayedCard(pileIndex);
+            if (lastCard.isPresent() && lastCard.get().getSuit() == Suit.HEARTS) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
