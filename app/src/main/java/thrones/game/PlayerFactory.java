@@ -7,24 +7,11 @@ import ch.aplu.jcardgame.Hand;
 import java.util.*;
 
 /**
- * Singleton Factory for creating Player instances and dealing hands.
- *
- * This factory centralises two related creation responsibilities:
- * 1. Creating the correct Player subclass from a properties config string
- * 2. Creating and dealing Hand objects to each player from the deck
- *
- * Design patterns used:
- * - Singleton: ensures a single factory instance manages all player/hand creation
- *   consistently with the same Random seed throughout the game
- * - Factory Method: encapsulates the instantiation logic for different Player subtypes
- *   and the dealing algorithm, so GameOfThrones doesn't need to know concrete player
- *   classes or the complex dealing rules
- *
- * GRASP principles:
- * - Creator: PlayerFactory has the initialisation data needed to create players and hands
- * - Low Coupling: GameOfThrones depends only on PlayerFactory and abstract Player
- * - High Cohesion: all player-and-hand creation logic is in one place
- * - Information Expert: the factory knows the config format, dealing rules, and Random seed
+ * Singleton factory responsible for creating players, creating hands, dealing
+ * cards, and loading configured autoplay movements into Player objects. This class centralises
+ * object creation logic that was previously spread through GameOfThrones. GameOfThrones only
+ * needs to request players and hands from this factory, rather than knowing how each concrete
+ * Player subclass is constructed or how cards are dealt
  */
 public class PlayerFactory {
 
@@ -42,6 +29,8 @@ public class PlayerFactory {
     /**
      * Initialise the singleton with a shared Random instance.
      * Must be called once before getInstance().
+     * @param random the Random instance shared by the game
+     * @return the single player factory instance
      */
     public static synchronized PlayerFactory init(Random random) {
         if (instance == null) {
@@ -52,6 +41,7 @@ public class PlayerFactory {
 
     /**
      * Get the singleton instance. Throws if init() hasn't been called.
+     * @return the initialised player factory instance
      */
     public static synchronized PlayerFactory getInstance() {
         if (instance == null) {
@@ -62,28 +52,16 @@ public class PlayerFactory {
     }
 
     /**
-     * Reset the singleton (useful for testing where multiple games are created).
+     * Reset the singleton
      */
     public static synchronized void reset() {
         instance = null;
     }
 
-    // ===================================================================
-    // Player Creation
-    // ===================================================================
-
     /**
-     * Creates a Player from the properties configuration string.
-     *
-     * Expected formats:
-     *   "human"                -> HumanPlayer
-     *   "random"               -> RandomBotPlayer
-     *   "legal-oa,td,tm"       -> LegalBotPlayer with OA, TD, TM considerations
-     *   "legal"                -> LegalBotPlayer with no considerations
-     *   "smart"                -> SmartBotPlayer
-     *
-     * @param playerIndex  the player's index (0-3)
-     * @param configString the raw string from properties, e.g. "legal-oa,td,tm"
+     * Creates a Player from the properties configuration string
+     * @param playerIndex the player index
+     * @param configString the raw string from properties
      * @return a fully configured Player instance
      */
     public Player createPlayer(int playerIndex, String configString) {
@@ -93,7 +71,7 @@ public class PlayerFactory {
 
         String trimmed = configString.trim().toLowerCase();
 
-        // Split on the first '-' to separate player type from optional config
+        // separate player type from optional config
         String playerTypeStr;
         String configPart = null;
         int dashIndex = trimmed.indexOf('-');
@@ -121,7 +99,10 @@ public class PlayerFactory {
     }
 
     /**
-     * Creates all four players from a Properties object.
+     * Creates all four players from a Properties object
+     * @param properties the game configuration properties
+     * @param nbPlayers number of players to create
+     * @return a list containing all created player objects
      */
     public List<Player> createAllPlayers(Properties properties, int nbPlayers) {
         List<Player> players = new ArrayList<>();
@@ -133,22 +114,24 @@ public class PlayerFactory {
     }
 
     /**
-     * Loads auto-play movement data from properties into each Player's MoveData.
+     * Loads autoplay movement data from properties into each Player MoveData.
      *
      * Reads "plays.{playIndex}.players.{playerIndex}.cardsPlayed" for each play
      * and player, parsing the comma-separated move strings (e.g. "7H-0,6C-0,7C-0")
      * and storing them via Player.setAutoMoves().
      *
      * This should be called after createAllPlayers() when isAuto is true,
-     * so that the auto-play information lives with each Player rather than
-     * in GameOfThrones' global lists.
+     * so that the autoplay information lives with each Player rather than
+     * in GameOfThrones global lists.
      *
-     * @param players    the list of Player objects to populate
+     * @param players the list of Player objects to populate
      * @param properties the game properties containing cardsPlayed entries
-     * @param nbPlays    the number of plays (rounds) in the game
+     * @param nbPlays the number of plays (rounds) in the game
      */
     public void loadAutoPlayMovements(List<Player> players, Properties properties, int nbPlays) {
         for (Player player : players) {
+            // Each player owns its own auto-play movement data, so look up moves
+            // using that player's identifier rather than storing all moves globally
             int playerIndex = player.getPlayerIdentifier();
 
             for (int playIndex = 0; playIndex < nbPlays; playIndex++) {
@@ -156,16 +139,20 @@ public class PlayerFactory {
                 String value = properties.getProperty(key);
                 if (value != null && !value.trim().isEmpty()) {
                     List<String> moves = Arrays.asList(value.split(","));
-//                    List<String> moves = Arrays.stream(value.split(","))
-//                            .map(String::trim)
-//                            .filter(s -> !s.isEmpty())
-//                            .toList();
                     player.setAutoMoves(playIndex, moves);
                 }
             }
         }
     }
 
+
+    /**
+     * Creates a LegalBotPlayer and parses its optional consideration codes.
+     *
+     * @param playerIndex the player identifier
+     * @param considerationsStr comma-separated legal bot consideration codes, or null
+     * @return a configured LegalBotPlayer
+     */
     private LegalBotPlayer createLegalBot(int playerIndex, String considerationsStr) {
         List<String> considerationCodes = new ArrayList<>();
         if (considerationsStr != null && !considerationsStr.isEmpty()) {
@@ -180,14 +167,11 @@ public class PlayerFactory {
         return new LegalBotPlayer(playerIndex, considerationCodes);
     }
 
-    // ===================================================================
-    // Hand Creation and Dealing
-    // ===================================================================
 
     /**
-     * Creates empty Hand objects for each player using the given deck.
+     * Creates empty Hand objects for each player using the given deck
      *
-     * @param deck      the game Deck to create hands from
+     * @param deck the game Deck to create hands from
      * @param nbPlayers number of players
      * @return array of empty Hand objects, one per player
      */
@@ -209,12 +193,12 @@ public class PlayerFactory {
      * 3. Deals 9 effect cards to each player (auto-assigned or random)
      * 4. Sorts each hand
      *
-     * @param hands              the Hand array to deal into
-     * @param deck               the game Deck
-     * @param nbPlayers          number of players
-     * @param isAuto             whether auto-mode is enabled
+     * @param hands the Hand array to deal into
+     * @param deck the game Deck
+     * @param nbPlayers number of players
+     * @param isAuto whether auto mode is enabled
      * @param initialHeartStrings heart card strings for this play, per player
-     * @param initialCardStrings  effect card strings for this play, per player
+     * @param initialCardStrings effect card strings for this play, per player
      */
     public void dealCards(Hand[] hands, Deck deck, int nbPlayers,
                           boolean isAuto,
@@ -245,6 +229,15 @@ public class PlayerFactory {
         }
     }
 
+    /**
+     * Deals the required heart character cards to each player.
+     *
+     * @param hands the Hand array to deal into
+     * @param nbPlayers number of players
+     * @param pack
+     * @param isAuto whether auto mode is enabled
+     * @param initialHeartStrings heart card strings for this play
+     */
     private void dealHeartCards(Hand[] hands, Hand pack, int nbPlayers,
                                 boolean isAuto, List<List<String>> initialHeartStrings) {
         List<Card> heartCards = new ArrayList<>(pack.getCardsWithSuit(Suit.HEARTS));
@@ -274,6 +267,15 @@ public class PlayerFactory {
         }
     }
 
+    /**
+     * Deals the required non-heart effect cards to each player.
+     *
+     * @param hands the Hand array to deal into
+     * @param pack
+     * @param nbPlayers the number of players
+     * @param isAuto whether auto mode is on
+     * @param initialCardStrings effect card string for this play
+     */
     private void dealEffectCards(Hand[] hands, Hand pack, int nbPlayers,
                                  boolean isAuto, List<List<String>> initialCardStrings) {
         for (int i = 0; i < nbPlayers; i++) {
@@ -301,10 +303,12 @@ public class PlayerFactory {
         }
     }
 
-    // ===================================================================
-    // Card utility methods (moved from GameOfThrones)
-    // ===================================================================
-
+    /**
+     * Converts a card string into its Rank value.
+     *
+     * @param cardName the compact card string
+     * @return the matching Rank
+     */
     private Rank getRankFromString(String cardName) {
         String rankString = cardName.substring(0, cardName.length() - 1);
         int rankValue = Integer.parseInt(rankString);
@@ -316,6 +320,12 @@ public class PlayerFactory {
         return Rank.ACE;
     }
 
+    /**
+     * Converts a card string into its Suit value.
+     *
+     * @param cardName the compact card string
+     * @return the matching Suit
+     */
     private Suit getSuitFromString(String cardName) {
         String suitString = cardName.substring(cardName.length() - 1);
         for (Suit suit : Suit.values()) {
@@ -326,6 +336,13 @@ public class PlayerFactory {
         return Suit.CLUBS;
     }
 
+    /**
+     * Finds the Card object in a list that matches a compact card string.
+     *
+     * @param cards the list of cards to search
+     * @param cardName the compact card string
+     * @return the matching Card, or null if no match is found
+     */
     private Card getCardFromList(List<Card> cards, String cardName) {
         Rank existingRank = getRankFromString(cardName);
         Suit existingSuit = getSuitFromString(cardName);
@@ -340,6 +357,11 @@ public class PlayerFactory {
         return null;
     }
 
+    /**
+     * Sorts a hand by suit first, then by rank value.
+     *
+     * @param hand the hand to sort
+     */
     private void sortHand(Hand hand) {
         List<Card> cards = hand.getCardList();
         cards.sort((o1, o2) -> {
