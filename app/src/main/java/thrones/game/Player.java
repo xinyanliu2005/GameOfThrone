@@ -72,6 +72,7 @@ public abstract class Player {
         return moveData.lastPileIndex;
     }
 
+    /* Find the desire card in hand. If the player doesn't have it, return null */
     private Card findCardInHand(String cardName) {
         if (playerHand == null) return null;
         String rankStr = cardName.substring(0, cardName.length() - 1);
@@ -108,13 +109,6 @@ public abstract class Player {
         return playerHand;
     }
 
-    public int getCurrentScore() {
-        return currentScore;
-    }
-
-    public void addPointsToScore(int pointsEarned) {
-        this.currentScore += pointsEarned;
-    }
 
     /**
      * Filters the player's hand for cards that are valid to play in the current round type.

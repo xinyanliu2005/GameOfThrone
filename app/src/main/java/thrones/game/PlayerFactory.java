@@ -68,10 +68,6 @@ public class PlayerFactory {
         instance = null;
     }
 
-    // ===================================================================
-    // Player Creation
-    // ===================================================================
-
     /**
      * Creates a Player from the properties configuration string.
      *
@@ -156,10 +152,6 @@ public class PlayerFactory {
                 String value = properties.getProperty(key);
                 if (value != null && !value.trim().isEmpty()) {
                     List<String> moves = Arrays.asList(value.split(","));
-//                    List<String> moves = Arrays.stream(value.split(","))
-//                            .map(String::trim)
-//                            .filter(s -> !s.isEmpty())
-//                            .toList();
                     player.setAutoMoves(playIndex, moves);
                 }
             }
@@ -180,9 +172,6 @@ public class PlayerFactory {
         return new LegalBotPlayer(playerIndex, considerationCodes);
     }
 
-    // ===================================================================
-    // Hand Creation and Dealing
-    // ===================================================================
 
     /**
      * Creates empty Hand objects for each player using the given deck.
@@ -301,9 +290,6 @@ public class PlayerFactory {
         }
     }
 
-    // ===================================================================
-    // Card utility methods (moved from GameOfThrones)
-    // ===================================================================
 
     private Rank getRankFromString(String cardName) {
         String rankString = cardName.substring(0, cardName.length() - 1);

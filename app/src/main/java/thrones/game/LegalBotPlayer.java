@@ -58,6 +58,7 @@ public class LegalBotPlayer extends Player {
         return Optional.empty();
     }
 
+    /* Add desire strategy into the composite based on configuration. */
     private CompositeStrategy buildStrategy(List<String> codes) {
         CompositeStrategy composite = new CompositeStrategy();
         for (String code : codes) {
