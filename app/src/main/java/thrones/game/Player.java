@@ -87,9 +87,6 @@ public abstract class Player {
         return null;
     }
 
-    public MoveData getMoveData() {
-        return moveData;
-    }
 
     public void setAutoMoves(int playIndex, List<String> moves) {
         moveData.setMoves(playIndex, moves);
