@@ -5,7 +5,6 @@ import thrones.game.Rank;
 import thrones.game.Suit;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Builder for constructing the AffectedCharacter decorator chain from a list (i.e. pile) of cards in play order
@@ -33,17 +32,17 @@ public final class CharacterBuilder {
     /**
      * Given an ordered list (i.e. pile) of cards, create an AffectedCharacter from them
      * @param cards list of cards in order of which they should be applied in building a character (Hearts first)
-     * @return Optionally return an Affected Character
+     * @return return an Affected Character, or null if no character is built
      */
-    public static Optional<AffectedCharacter> fromCards(List<Card> cards) {
+    public static AffectedCharacter fromCards(List<Card> cards) {
         if (cards == null || cards.isEmpty()) {
-            return Optional.empty();
+            return null;
         }
 
         AffectedCharacter character = null;
         for (Card card : cards) {
             character = addCard(character, card);
         }
-        return Optional.of(character);
+        return character;
     }
 }

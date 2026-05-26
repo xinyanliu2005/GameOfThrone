@@ -164,7 +164,8 @@ public class GameOfThrones extends CardGame {
     }
 
 
-    private Optional<Card> selected;
+    private Card selected;
+    private boolean isSelectionMade = false;
     private final int NON_SELECTION_VALUE = -1;
     private int selectedPileIndex = NON_SELECTION_VALUE;
     private final int UNDEFINED_INDEX = -1;
@@ -196,11 +197,13 @@ public class GameOfThrones extends CardGame {
             // Set up human player for interaction
             currentHand.addCardListener(new CardAdapter() {
                 public void leftDoubleClicked(Card card) {
-                    selected = Optional.of(card);
+                    selected = card;
+                    isSelectionMade = true;
                     currentHand.setTouchEnabled(false);
                 }
                 public void rightClicked(Card card) {
-                    selected = Optional.empty(); // Don't care which card we right-clicked for player to pass
+                    selected = null; // Don't care which card we right-clicked for player to pass
+                    isSelectionMade = true;
                     currentHand.setTouchEnabled(false);
                 }
             });
@@ -249,20 +252,23 @@ public class GameOfThrones extends CardGame {
     private void waitForCorrectSuit(int playerIndex, boolean isCharacter) {
         Player currentPlayer = players.get(playerIndex);
         if (currentPlayer.getPlayerHand().isEmpty()) {
-            selected = Optional.empty();
+            selected = null;
+            isSelectionMade = true;
         } else {
+            isSelectionMade = false;
             selected = null;
             currentPlayer.getPlayerHand().setTouchEnabled(true);
             do {
-                if (selected == null) {
+                if (!isSelectionMade) {
                     delay(100);
                     continue;
                 }
-                Suit suit = selected.isPresent() ? (Suit) selected.get().getSuit() : null;
+                Suit suit = selected != null ? (Suit) selected.getSuit() : null;
                 if (isCharacter && suit != null && suit.isCharacter() ||         // If we want character, can't pass and suit must be right
                         !isCharacter && (suit == null || !suit.isCharacter())) { // If we don't want character, can pass or suit must not be character
                     break;
                 } else {
+                    isSelectionMade = false;
                     selected = null;
                     currentPlayer.getPlayerHand().setTouchEnabled(true);
                 }
@@ -317,19 +323,19 @@ public class GameOfThrones extends CardGame {
 
         for (int i = 0; i < 2; i++) {
             int pileIndex = 0;
-            selected = Optional.empty();
+            selected = null;
 
             int playerIndex = getPlayerIndex(nextStartingPlayer + i);
             setStatusText("Player " + playerIndex + " select a Heart card to play");
             if (isAuto) {
                 Player currentPlayer = players.get(playerIndex);
                 selected = currentPlayer.playAutoCard(currentPlay);
-                if (selected.isPresent()) {
+                if (selected != null) {
                     pileIndex = currentPlayer.getAutoPileIndex();
                 }
             }
 
-            if (selected.isEmpty()) {
+            if (selected == null) {
                 Player currentPlayer = players.get(playerIndex);
                 // Polymorphic dispatch: each Player subclass implements its own card selection
                 if (isHumanPlayer(playerIndex)) {
@@ -337,16 +343,16 @@ public class GameOfThrones extends CardGame {
                     waitForCorrectSuit(playerIndex, true);
                 } else {
                     selected = currentPlayer.selectCardToPlay(board, true);
-                    if (selected.isPresent()) {
+                    if (selected != null) {
                         pileIndex = currentPlayer.choosePileToPlayOn();
                     }
                 }
             }
 
-            assert selected.isPresent() : " Pass returned on selection of character.";
-            selected.get().setVerso(false);
-            selected.get().transfer(board.getPiles()[pileIndex], true); // transfer to pile (includes graphic effect)
-            logger.logPlayerMovement(nextStartingPlayer + i, selected.get(), pileIndex);
+            assert selected != null : " Pass returned on selection of character.";
+            selected.setVerso(false);
+            selected.transfer(board.getPiles()[pileIndex], true); // transfer to pile (includes graphic effect)
+            logger.logPlayerMovement(nextStartingPlayer + i, selected, pileIndex);
             boardRenderer.updatePileRanks(board);
 
         }
@@ -363,15 +369,15 @@ public class GameOfThrones extends CardGame {
             if (isAuto && isHumanPlayer(nextPlayer)) {
                 Player currentPlayer = players.get(nextPlayer);
                 selected = currentPlayer.playAutoCard(currentPlay);
-                if (selected.isPresent()) {
+                if (selected != null) {
                     selectedPileIndex = currentPlayer.getAutoPileIndex();
-                    setStatusText("Selected: " + canonical(selected.get()) + ". Player" + nextPlayer +
+                    setStatusText("Selected: " + canonical(selected) + ". Player" + nextPlayer +
                             " select a pile " + selectedPileIndex + " to play the card.");
                     hasSelectedCard = true;
                 }
             }
 
-            if (!hasSelectedCard || selected.isEmpty()) {
+            if (!hasSelectedCard || selected == null) {
                 nextPlayer = getPlayerIndex(nextPlayer);
                 setStatusText("Player" + nextPlayer + " select a non-Heart card to play.");
                 // Polymorphic dispatch: each Player subclass implements its own card selection
@@ -382,8 +388,8 @@ public class GameOfThrones extends CardGame {
                     selected = currentPlayer.selectCardToPlay(board, false);
                 }
 
-                if (selected.isPresent()) {
-                    setStatusText("Selected: " + canonical(selected.get()) + ". Player" + nextPlayer + " select a pile to play the card.");
+                if (selected != null) {
+                    setStatusText("Selected: " + canonical(selected) + ". Player" + nextPlayer + " select a pile to play the card.");
                     if (isHumanPlayer(nextPlayer)) {
                         waitForPileSelection();
                     } else {
@@ -395,11 +401,11 @@ public class GameOfThrones extends CardGame {
                 }
             }
 
-            if (selected != null && selected.isPresent()) {
-                selected.get().setVerso(false);
-                selected.get().transfer(board.getPiles()[selectedPileIndex], true); // transfer to pile (includes graphic effect)
+            if (selected != null) {
+                selected.setVerso(false);
+                selected.transfer(board.getPiles()[selectedPileIndex], true); // transfer to pile (includes graphic effect)
                 boardRenderer.updatePileRanks(board);
-                logger.logPlayerMovement(nextPlayer, selected.get(), selectedPileIndex);
+                logger.logPlayerMovement(nextPlayer, selected, selectedPileIndex);
             }
 
             nextPlayer = (nextPlayer + 1) % nbPlayers;

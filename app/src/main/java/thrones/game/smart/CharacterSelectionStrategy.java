@@ -30,7 +30,7 @@ public class CharacterSelectionStrategy implements SelectionStrategy {
      * @param playerIdentifier index of the player
      * @return a possible BotMove, indicating the move that the player made
      */
-    public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
+    public BotMove selectMove(Hand hand, PileInformation board, int playerIdentifier) {
         // Group cards by their rank
         Map<Rank, List<Card>> cardsGroupedByRank = hand.getCardList()
                 .stream()
@@ -75,13 +75,13 @@ public class CharacterSelectionStrategy implements SelectionStrategy {
 
         // realistically winners shouldn't be empty if being called in the correct place...
         // player should always have a heart/character card...
-        if (winners.isEmpty()) return Optional.empty();
+        if (winners.isEmpty()) return null;
 
         // choose random character card from remaining...could be more than one, as is based on their score value...
         // e.g. [10H, KH]
         Card chosenCharacter = winners.get(this.random.nextInt(winners.size()));
 
         int ownPileIndex = playerIdentifier % 2;
-        return Optional.of(new BotMove(chosenCharacter, ownPileIndex));
+        return new BotMove(chosenCharacter, ownPileIndex);
     }
 }

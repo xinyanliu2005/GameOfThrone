@@ -9,7 +9,6 @@ import thrones.game.effectCard.CharacterBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Strategy interface to be used by SmartBotPlayer
@@ -17,7 +16,7 @@ import java.util.Optional;
  * decision mode for the SmartBotPlayer
  */
 public interface SelectionStrategy {
-    Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier);
+    BotMove selectMove(Hand hand, PileInformation board, int playerIdentifier);
 
     /**
      * Static helper to compute the attack changes for a proposed move by
@@ -33,8 +32,10 @@ public interface SelectionStrategy {
         List<Card> pileAfter = new ArrayList<>(pileBefore);
         pileAfter.add(card);
 
-        int oldAttack = CharacterBuilder.fromCards(pileBefore).map(AffectedCharacter::getAttack).orElse(0);
-        int newAttack = CharacterBuilder.fromCards(pileAfter).map(AffectedCharacter::getAttack).orElse(0);
+        AffectedCharacter charBefore = CharacterBuilder.fromCards(pileBefore);
+        int oldAttack = charBefore != null ? charBefore.getAttack() : 0;
+        AffectedCharacter charAfter = CharacterBuilder.fromCards(pileAfter);
+        int newAttack = charAfter != null ? charAfter.getAttack() : 0;
 
         return newAttack - oldAttack;
     }
@@ -53,8 +54,10 @@ public interface SelectionStrategy {
         List<Card> pileAfter = new ArrayList<>(pileBefore);
         pileAfter.add(card);
 
-        int oldDefence = CharacterBuilder.fromCards(pileBefore).map(AffectedCharacter::getDefence).orElse(0);
-        int newDefence = CharacterBuilder.fromCards(pileAfter).map(AffectedCharacter::getDefence).orElse(0);
+        AffectedCharacter charBefore = CharacterBuilder.fromCards(pileBefore);
+        int oldDefence = charBefore != null ? charBefore.getDefence() : 0;
+        AffectedCharacter charAfter = CharacterBuilder.fromCards(pileAfter);
+        int newDefence = charAfter != null ? charAfter.getDefence() : 0;
 
         return newDefence - oldDefence;
     }

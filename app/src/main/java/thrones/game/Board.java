@@ -7,7 +7,6 @@ import thrones.game.effectCard.AffectedCharacter;
 import thrones.game.effectCard.CharacterBuilder;
 
 import java.util.List;
-import java.util.Optional;
 
 public class Board implements PileInformation {
 
@@ -92,21 +91,23 @@ public class Board implements PileInformation {
     @Override
     public int getPileAttack(int pileIndex) {
         // Implement logic to compute the attack value for the pile
-        return CharacterBuilder.fromCards(getPileCards(pileIndex)).map(AffectedCharacter::getAttack).orElse(0);
+        AffectedCharacter character = CharacterBuilder.fromCards(getPileCards(pileIndex));
+        return character != null ? character.getAttack() : 0;
     }
 
     @Override
     public int getPileDefence(int pileIndex) {
         // Implement logic to compute the defence value for the pile
-        return CharacterBuilder.fromCards(getPileCards(pileIndex)).map(AffectedCharacter::getDefence).orElse(0);
+        AffectedCharacter character = CharacterBuilder.fromCards(getPileCards(pileIndex));
+        return character != null ? character.getDefence() : 0;
     }
 
     @Override
-    public Optional<Card> getLastPlayedCard(int pileIndex) {
+    public Card getLastPlayedCard(int pileIndex) {
         if (piles == null || pileIndex >= piles.length || piles[pileIndex].isEmpty()) {
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(piles[pileIndex].getLast());
+        return piles[pileIndex].getLast();
     }
 
     @Override

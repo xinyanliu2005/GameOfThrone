@@ -4,7 +4,6 @@ import thrones.game.strategy.*;
 import ch.aplu.jcardgame.Card;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class LegalBotPlayer extends Player {
     private List<String> considerationCodes;
@@ -21,10 +20,10 @@ public class LegalBotPlayer extends Player {
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
+    public Card selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         List<Card> validPlayableCards = getValidCards(isCharacterRound);
         if (validPlayableCards.isEmpty()) {
-            return Optional.empty();
+            return null;
         }
 
         // By checking board for the current play index
@@ -34,28 +33,27 @@ public class LegalBotPlayer extends Player {
         }
 
         // Get this turn play card
-        Optional<Card> autoCandidateCard = playAutoCard(currentPlayIndex);
-        if (autoCandidateCard.isEmpty()) {
-            return Optional.empty();
+        Card selectedCard = playAutoCard(currentPlayIndex);
+        if (selectedCard == null) {
+            return null;
         }
 
-        // Get the current turn desired card and target pile
-        Card selectedCard = autoCandidateCard.get();
+        // Get the current turn target pile
         int autoCandidatePileIndex = getAutoPileIndex();
 
         // Determine whether it breaks any consideration
-        Optional<BotMove> validatedMove = coreStrategy.determineMove(selectedCard, autoCandidatePileIndex,
+        BotMove validatedMove = coreStrategy.determineMove(selectedCard, autoCandidatePileIndex,
                 currentBoard, getPlayerIdentifier());
 
         // Check whether the move is validated by strategy, also won't break game rule
-        if (validatedMove.isPresent() && isMoveValid(selectedCard, autoCandidatePileIndex, currentBoard)) {
-            this.pendingPileIndex = validatedMove.get().getTargetPileIndex();
-            return Optional.of(selectedCard);
+        if (validatedMove != null && isMoveValid(selectedCard, autoCandidatePileIndex, currentBoard)) {
+            this.pendingPileIndex = validatedMove.getTargetPileIndex();
+            return selectedCard;
         }
 
         // The move violated one of the considerations, we will pass
         this.pendingPileIndex = -1;
-        return Optional.empty();
+        return null;
     }
 
     /* Add desire strategy into the composite based on configuration. */

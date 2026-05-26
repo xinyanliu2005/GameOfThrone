@@ -3,8 +3,6 @@ package thrones.game;
 import ch.aplu.jcardgame.Card;
 import thrones.game.smart.*;
 
-import java.util.Optional;
-
 public class SmartBotPlayer extends Player {
     private final SelectionStrategy characterStrategy = new CharacterSelectionStrategy();
     private final SelectionStrategy attackingStrategy = new AttackingStrategy();
@@ -22,24 +20,24 @@ public class SmartBotPlayer extends Player {
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
+    public Card selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         if (currentBoard.getPlayIndex() != lastSeenPlayIndex) {
             justPassed = false;
             lastSeenPlayIndex = currentBoard.getPlayIndex();
         }
 
         SelectionStrategy chosenStrategy = pickStrategy(currentBoard, isCharacterRound);
-        Optional<BotMove> move = chosenStrategy.selectMove(getPlayerHand(), currentBoard, getPlayerIdentifier());
+        BotMove move = chosenStrategy.selectMove(getPlayerHand(), currentBoard, getPlayerIdentifier());
 
-        if (move.isEmpty()) {
+        if (move == null) {
             justPassed = true;
             pendingPileIndex = -1;
-            return Optional.empty();
+            return null;
         }
 
         if (chosenStrategy == minimalPlayStrategy) justPassed = false;
-        pendingPileIndex = move.get().getTargetPileIndex();
-        return Optional.of(move.get().getCard());
+        pendingPileIndex = move.getTargetPileIndex();
+        return move.getCard();
     }
 
     private SelectionStrategy pickStrategy(PileInformation currentBoard, boolean isCharacterRound) {

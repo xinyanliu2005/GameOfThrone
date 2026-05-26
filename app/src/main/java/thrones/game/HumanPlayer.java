@@ -4,11 +4,9 @@ import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.CardAdapter;
 import ch.aplu.jcardgame.Hand;
 
-import java.util.Optional;
-
 public class HumanPlayer extends Player {
 
-    private Optional<Card> pendingSelectedCard;
+    private Card pendingSelectedCard;
     private boolean isCardSelected;
 
     private int pendingSelectedPileIndex;
@@ -27,14 +25,14 @@ public class HumanPlayer extends Player {
         getPlayerHand().addCardListener(new CardAdapter() {
             @Override
             public void leftDoubleClicked(Card card) {
-                pendingSelectedCard = Optional.of(card);
+                pendingSelectedCard = card;
                 isCardSelected = true;
                 getPlayerHand().setTouchEnabled(false);
             }
 
             @Override
             public void rightClicked(Card card) {
-                pendingSelectedCard = Optional.empty(); // Represents Passing current round
+                pendingSelectedCard = null; // Represents Passing current round
                 isCardSelected = true;
                 getPlayerHand().setTouchEnabled(false);
             }
@@ -42,13 +40,13 @@ public class HumanPlayer extends Player {
     }
 
     @Override
-    public Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
+    public Card selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound) {
         if (getPlayerHand().isEmpty()) {
-            return Optional.empty();
+            return null;
         }
 
         isCardSelected = false;
-        pendingSelectedCard = Optional.empty();
+        pendingSelectedCard = null;
         getPlayerHand().setTouchEnabled(true);
 
 
@@ -58,7 +56,7 @@ public class HumanPlayer extends Player {
                 continue;
             }
 
-            Suit cardSuit = pendingSelectedCard.isPresent() ? (Suit) pendingSelectedCard.get().getSuit() : null;
+            Suit cardSuit = pendingSelectedCard != null ? (Suit) pendingSelectedCard.getSuit() : null;
 
             boolean isValidCharacterPlay = isCharacterRound && cardSuit != null && cardSuit.isCharacter();
             boolean isValidNonCharacterPlay = !isCharacterRound && (cardSuit == null || !cardSuit.isCharacter());
@@ -68,7 +66,7 @@ public class HumanPlayer extends Player {
             } else {
                 // The human clicked an invalid card. Reset and wait again.
                 isCardSelected = false;
-                pendingSelectedCard = Optional.empty();
+                pendingSelectedCard = null;
                 getPlayerHand().setTouchEnabled(true);
             }
             pauseThreadExecution(100);
