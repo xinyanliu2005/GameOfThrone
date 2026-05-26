@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * maximise likelihood of getting double effect cards during play
  */
 public class CharacterSelectionStrategy implements SelectionStrategy {
-    Random random;
+    private final Random random;
 
     public CharacterSelectionStrategy() {
         this.random = new Random();
@@ -73,8 +73,7 @@ public class CharacterSelectionStrategy implements SelectionStrategy {
                 .filter(card -> ((Rank) card.getRank()).getScoreValue() == highestScore)
                 .toList();
 
-        // realistically winners shouldn't be empty if being called in the correct place...
-        // player should always have a heart/character card...
+        // defensive, this shouldn't happen in normal play
         if (winners.isEmpty()) return null;
 
         // choose random character card from remaining...could be more than one, as is based on their score value...

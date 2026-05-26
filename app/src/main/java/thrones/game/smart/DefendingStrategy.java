@@ -6,7 +6,7 @@ import thrones.game.BotMove;
 import thrones.game.PileInformation;
 import thrones.game.Suit;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Concrete strategy for defending mode. Picks the move that creates the largest effect by either increasing
@@ -54,7 +54,7 @@ public class DefendingStrategy implements SelectionStrategy {
                 int attackChange = -SelectionStrategy.attackDelta(currentCard, board, 1 - ownPileIndex);
 
                 // if the effect is larger the previous largest effect, update largest effect, related card, and targeted pile
-                // always prefer diamond over spade if == effect
+                // always prefer diamond over spade if the effects are the same
                 if (attackChange > 0 && attackChange >= currentLargestEffect) {
                     currentLargestEffect = attackChange;
                     cardWithLargestEffect = currentCard;

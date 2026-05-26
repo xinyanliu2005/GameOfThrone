@@ -31,7 +31,7 @@ public class MinimalPlayStrategy implements SelectionStrategy {
         // another card with same size effect but higher priority is found
         int priority = Integer.MAX_VALUE;
 
-        final int DIAMOND_PRIORITY = 0;
+        final int DIAMONDS_PRIORITY = 0;
         final int CLUBS_PRIORITY = 1;
         final int SPADES_PRIORITY = 2;
 
@@ -48,9 +48,9 @@ public class MinimalPlayStrategy implements SelectionStrategy {
                 int relevantChange = Math.max(attackDrop, defenceDrop);
 
                 // if change isn't 0 and it is smallest effect so far, store this card, it's relevant priority value, and the targeted pile
-                if (relevantChange > 0 && (relevantChange < currentSmallestEffect || (relevantChange == currentSmallestEffect && DIAMOND_PRIORITY < priority))) {
+                if (relevantChange > 0 && (relevantChange < currentSmallestEffect || (relevantChange == currentSmallestEffect && DIAMONDS_PRIORITY < priority))) {
                     cardWithSmallestEffect = currentCard;
-                    priority = DIAMOND_PRIORITY;
+                    priority = DIAMONDS_PRIORITY;
                     currentSmallestEffect = relevantChange;
                     targetedPileIndex = oppositionPileIndex;
                 }

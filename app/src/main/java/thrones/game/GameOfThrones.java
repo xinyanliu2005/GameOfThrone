@@ -6,7 +6,6 @@ import ch.aplu.jcardgame.*;
 import ch.aplu.jgamegrid.*;
 import thrones.game.utility.Logger;
 
-import java.awt.Font;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,7 +64,6 @@ public class GameOfThrones extends CardGame {
 
     private int currentPlay = 0;
     private List<Integer> firstPlayers = new ArrayList<>();
-    private int NUMBER_OF_PLAYS = 2;
     private List<List<List<String>>> initialCardStrings = new ArrayList<>();
     private List<List<List<String>>> initialHeartStrings = new ArrayList<>();
 
@@ -92,7 +90,7 @@ public class GameOfThrones extends CardGame {
             factory.loadAutoPlayMovements(players, properties, nbPlays);
         }
 
-        for (int i = 0; i < NUMBER_OF_PLAYS; i++) {
+        for (int i = 0; i < nbPlays; i++) {
             String firstPlayerString = properties.getProperty("plays." + i + ".firstPlayer");
             if (firstPlayerString != null && !firstPlayerString.isEmpty()) {
                 firstPlayers.add(Integer.parseInt(firstPlayerString));
@@ -101,7 +99,7 @@ public class GameOfThrones extends CardGame {
             }
         }
 
-        for (int i = 0; i < NUMBER_OF_PLAYS; i++) {
+        for (int i = 0; i < nbPlays; i++) {
             initialCardStrings.add(new ArrayList<>());
             initialHeartStrings.add(new ArrayList<>());
             for (int j = 0; j < nbPlayers; j++) {
@@ -168,7 +166,6 @@ public class GameOfThrones extends CardGame {
     private boolean isSelectionMade = false;
     private final int NON_SELECTION_VALUE = -1;
     private int selectedPileIndex = NON_SELECTION_VALUE;
-    private final int UNDEFINED_INDEX = -1;
     public static final int ATTACK_RANK_INDEX = 0;
     public static final int DEFENCE_RANK_INDEX = 1;
     /** Assign the hands to each player */

@@ -8,6 +8,10 @@ import thrones.game.effectCard.CharacterBuilder;
 
 import java.util.List;
 
+/**
+ * Board owns the game state (e.g. piles, player scores, play index) and implements the PileInformation facade
+ * which players use to query game state
+ */
 public class Board implements PileInformation {
 
     private final int NORTH = 0;
@@ -22,6 +26,9 @@ public class Board implements PileInformation {
         piles[1] = new Hand(deck);
     }
 
+    /**
+     * Clear both piles. Called at the start of each play phase
+     */
     public void resetPiles() {
         for (Hand pile : piles) {
             pile.removeAll(true);
@@ -30,10 +37,6 @@ public class Board implements PileInformation {
 
     public Hand[] getPiles() {
         return piles;
-    }
-
-    public void setPlayIndex(int playIndex) {
-        this.playIndex = playIndex;
     }
 
     @Override
@@ -82,26 +85,38 @@ public class Board implements PileInformation {
 
     /* Automatically update score after each play's fight */
     private void updateScore(int targetPile, int score) {
+        // targetPile is a team index (e.g. 0 = NORTH, 1 = SOUTH),
+        // but should give score to both teammates (i and i+2)
         if (targetPile >= 0 && targetPile < scores.length / 2) {
             scores[targetPile] += score;
             scores[targetPile + 2] += score;
         }
     }
 
+    /**
+     * @param pileIndex pile to calculate the current attack value of
+     * @return current attack value of the given pile, utilising the decorator chain
+     */
     @Override
     public int getPileAttack(int pileIndex) {
-        // Implement logic to compute the attack value for the pile
         AffectedCharacter character = CharacterBuilder.fromCards(getPileCards(pileIndex));
         return character != null ? character.getAttack() : 0;
     }
 
+    /**
+     * @param pileIndex pile to calculate the current defence value of
+     * @return current defence value of the given pile, utilising the decorator chain
+     */
     @Override
     public int getPileDefence(int pileIndex) {
-        // Implement logic to compute the defence value for the pile
         AffectedCharacter character = CharacterBuilder.fromCards(getPileCards(pileIndex));
         return character != null ? character.getDefence() : 0;
     }
 
+    /**
+     * @param pileIndex pile to calculate the current defence value of
+     * @return card played most recently on the given pile
+     */
     @Override
     public Card getLastPlayedCard(int pileIndex) {
         if (piles == null || pileIndex >= piles.length || piles[pileIndex].isEmpty()) {
@@ -110,6 +125,10 @@ public class Board implements PileInformation {
         return piles[pileIndex].getLast();
     }
 
+    /**
+     * @param pileIndex index of the pile being queried
+     * @return a List of Cards in the indicated pile
+     */
     @Override
     public List<Card> getPileCards(int pileIndex) {
         if (piles == null || pileIndex >= piles.length || piles[pileIndex].isEmpty()) {
@@ -118,6 +137,10 @@ public class Board implements PileInformation {
         return piles[pileIndex].getCardList();
     }
 
+    /**
+     * @param pileIndex index of the pile being queried
+     * @return get the score associated with the given pile
+     */
     @Override
     public int getScore(int pileIndex) {
         if (pileIndex >= 0 && pileIndex < scores.length) {

@@ -2,9 +2,11 @@ package thrones.game.smart;
 
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
-import thrones.game.*;
+import thrones.game.BotMove;
+import thrones.game.PileInformation;
+import thrones.game.Suit;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Concrete strategy for attacking mode. Picks the move that creates the largest effect by either increasing

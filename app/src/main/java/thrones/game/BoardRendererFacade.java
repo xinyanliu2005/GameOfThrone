@@ -7,8 +7,7 @@ import java.awt.*;
 
 /**
  * Facade over the JGameGrid rendering API for the score labels and pile-status text on the game board
- *
- * extracted from GameOfThrones to reduce responsibilities of GameOfThrones
+ * extracted from GameOfThrones to reduce its responsibilities
  */
 public class BoardRendererFacade {
     private final CardGame game;
