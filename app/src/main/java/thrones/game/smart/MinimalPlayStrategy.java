@@ -20,7 +20,7 @@ public class MinimalPlayStrategy implements SelectionStrategy {
      * @param playerIdentifier index of the player
      * @return a possible BotMove, indicating the move that the player made
      */
-    public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
+    public BotMove selectMove(Hand hand, PileInformation board, int playerIdentifier) {
         int ownPileIndex = playerIdentifier % 2;
         int oppositionPileIndex = 1 - ownPileIndex;
 
@@ -75,8 +75,8 @@ public class MinimalPlayStrategy implements SelectionStrategy {
             }
         }
 
-        if (cardWithSmallestEffect == null) return Optional.empty();
+        if (cardWithSmallestEffect == null) return null;
 
-        return Optional.of(new BotMove(cardWithSmallestEffect, targetedPileIndex));
+        return new BotMove(cardWithSmallestEffect, targetedPileIndex);
     }
 }

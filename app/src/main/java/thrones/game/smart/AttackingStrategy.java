@@ -20,7 +20,7 @@ public class AttackingStrategy implements SelectionStrategy {
      * @param playerIdentifier index of the player
      * @return a possible BotMove, indicating the move that the player made
      */
-    public Optional<BotMove> selectMove(Hand hand, PileInformation board, int playerIdentifier) {
+    public BotMove selectMove(Hand hand, PileInformation board, int playerIdentifier) {
 
         // create list of relevant cards (i.e. attack and magic cards)
         List<Card> effectCards = hand.getCardList()
@@ -61,8 +61,8 @@ public class AttackingStrategy implements SelectionStrategy {
             }
         }
 
-        if (cardWithLargestEffect == null) return Optional.empty();
+        if (cardWithLargestEffect == null) return null;
 
-        return Optional.of(new BotMove(cardWithLargestEffect, targetedPileIndex));
+        return new BotMove(cardWithLargestEffect, targetedPileIndex);
     }
 }

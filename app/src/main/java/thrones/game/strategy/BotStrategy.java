@@ -3,8 +3,6 @@ import ch.aplu.jcardgame.Card;
 import thrones.game.BotMove;
 import thrones.game.PileInformation;
 
-import java.util.Optional;
-
 public interface BotStrategy {
     /**
      * Evaluates selected card. If it doesn't fall into the consideration, return false.

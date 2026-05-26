@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public abstract class Player {
     private int playerIdentifier;
@@ -51,17 +50,17 @@ public abstract class Player {
     /**
      * Uses the stored MoveData to determine the next card to play in auto mode.
      * @param playIndex The current play (round) index.
-     * @return An Optional containing the Card to play, or empty if no move is defined.
+     * @return The Card to play, or null if no move is defined.
      */
-    public Optional<Card> playAutoCard(int playIndex) {
+    public Card playAutoCard(int playIndex) {
         String moveStr = moveData.getNextMoveString(playIndex);
-        if (moveStr == null) return Optional.empty();
+        if (moveStr == null) return null;
 
         String[] parts = moveStr.split("-");
         String cardName = parts[0];
         moveData.lastPileIndex = Integer.parseInt(parts[1]);
 
-        return Optional.ofNullable(findCardInHand(cardName));
+        return findCardInHand(cardName);
     }
 
     /**
@@ -131,9 +130,9 @@ public abstract class Player {
      * @param currentBoard The latest board information about each pile's Attack, Defence Score, and the latest Card delt
      *                     on each pile. (Not used by auto-play players)
      * @param isCharacterRound True if the player MUST play a character (Heart) card.
-     * @return An Optional containing the selected Card, or empty if passing.
+     * @return The selected Card, or null if passing.
      */
-    public abstract Optional<Card> selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound);
+    public abstract Card selectCardToPlay(PileInformation currentBoard, boolean isCharacterRound);
 
     /**
      * Determines which pile the player will place their selected card on.
@@ -143,8 +142,8 @@ public abstract class Player {
 
     public boolean isMoveValid(Card card, int pileIndex, PileInformation board) {
         if (card.getSuit() == Suit.DIAMONDS) {
-            Optional<Card> lastCard = board.getLastPlayedCard(pileIndex);
-            if (lastCard.isPresent() && lastCard.get().getSuit() == Suit.HEARTS) {
+            Card lastCard = board.getLastPlayedCard(pileIndex);
+            if (lastCard != null && lastCard.getSuit() == Suit.HEARTS) {
                 return false;
             }
         }
